@@ -8,14 +8,27 @@
 	<link rel="stylesheet" type="text/css" media="screen" href="main.css" />
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+	<link rel="stylesheet" href="waves.min.css">
 </head>
 <body>
 	<div id="sidebar_screen">
-		<div id="sidebar"></div>
+		<div id="sidebar">
+			<div id="backbutton">
+				<button class="button_hamburger" onclick="hideHamburgerMenu()">
+					<i id="back_hamburger" class="material-icons">arrow_back</i>
+				</button>
+			</div>
+			<textarea name="idinput" id="idinput"></textarea>
+		</div>
 		<div id="side_exit" onclick="hideHamburgerMenu()"></div>
 	</div>
 	<div id="navbar">
 		<div id="topBar">
+			<div id="action">
+				<div class="action_button" id="minimize" onclick="minimize()"><i class="material-icons">minimize</i></div>
+				<div class="action_button" id="maximize" onclick="maximize()"><i class="material-icons sharp">crop_din</i></div>
+				<div class="action_button" id="close" onclick="close_window()"><i class="material-icons">close</i></div>
+			</div>
 			<p id="time">00:00</p>
 			<p id="time_elapsed">Time elapsed: 00:00</p>
 		</div>
@@ -61,6 +74,12 @@
 	function stopTimer() {
 		clearInterval(timer);
 	}
+	</script>
+	<script src="waves.min.js"></script>
+	<script src="menuhandler.js"></script>
+	<script>
+		Waves.init();
+		Waves.attach(".button_hamburger i", ["waves-circle"]);
 	</script>
 </body>
 </html>

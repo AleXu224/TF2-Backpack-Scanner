@@ -1,10 +1,10 @@
-body{
+body {
 	margin: 0px;
 	padding: 0px;
-	color: rgba(255, 255, 255, 0.90)
+	color: rgba(255, 255, 255, 0.75)
 }
 
-button{
+button {
 	background: none;
 	border: none;
 	cursor: pointer;
@@ -12,33 +12,39 @@ button{
 	outline: none;
 }
 
-#navbar{
+#navbar {
 	top: 0px;
+	-webkit-app-region: drag;
 }
 
-#topBar{
+#topBar {
 	width: 100%;
 	height: 20px;
 	background-color: #8a0000;
 	position: absolute;
+	-webkit-app-region: drag;
 }
 
-#underBar{
+#underBar {
 	width: 100%;
 	height: 72px;
 	background-color: #c21f1f;
 	position: absolute;
-	top: 20px;	
+	top: 20px;
 }
 
-.button_hamburger{
+.button_hamburger {
 	height: 72px;
 	width: 72px;
-	color: #ffffff;
+	color: rgba(255, 255, 255, 0.75);
 	font-size: 24px;
 }
 
-#sidebar_screen{
+.button_hamburger:hover {
+	color: rgba(255, 255, 255, 0.90)
+}
+
+#sidebar_screen {
 	display: none;
 	width: 100%;
 	height: 100%;
@@ -48,34 +54,34 @@ button{
 	padding: 0px;
 }
 
-#sidebar{
+#sidebar {
 	width: 250px;
 	height: 100%;
 	background-color: #101010;
 	margin: 0;
 	display: inline-flex;
 	animation: animationFrames ease-out 0.1s;
-  	animation-iteration-count: 1;
- 	transform-origin: 50% 50%;
+	animation-iteration-count: 1;
+	transform-origin: 50% 50%;
 }
 
-@keyframes animationFrames{
+@keyframes animationFrames {
 	0% {
-	  transform:  translate(-250px,1px)  ;
+		transform: translate(-250px, 1px);
 	}
 	100% {
-	  transform:  translate(0px,1px)  ;
+		transform: translate(0px, 1px);
 	}
-  }
+}
 
-#side_exit{
+#side_exit {
 	width: calc(100% - 254px);
 	height: 100%;
 	margin: 0;
 	display: inline-flex;
 }
 
-#time{
+#time {
 	height: 10px;
 	margin: 0px;
 	padding: 0px;
@@ -85,7 +91,7 @@ button{
 	font-family: Roboto;
 }
 
-#time_elapsed{
+#time_elapsed {
 	display: none;
 	height: 10px;
 	margin: 0px;
@@ -94,4 +100,77 @@ button{
 	margin-left: 5px;
 	float: left;
 	font-family: Roboto;
+}
+
+#idinput {
+	padding: 0px;
+	margin: 0px;
+	margin-top: 72px;
+	position: absolute;
+	width: 250px;
+	height: 350px;
+	border: none;
+	resize: none;
+	outline: none;
+	font-family: Roboto;
+	font-weight: 600;
+}
+
+#backbutton {
+	width: 250px;
+	height: 72px;
+	position: absolute;
+	background-color: #c21f1f;
+}
+
+#back_hamburger {
+	margin-top: 5px;
+}
+
+.ripple {
+	background-position: center;
+	transition: background 0.8s;
+}
+
+.ripple:hover {
+	background: #47a7f5 radial-gradient(circle, transparent 1%, #47a7f5 1%) center/15000%;
+}
+
+.ripple:active {
+	background-color: #6eb9f7;
+	background-size: 100%;
+	transition: background 0s;
+}
+
+#action{
+	height: 20px;
+	float: right;
+	margin: 0px;
+	padding: 0px;
+	width: 60px;
+	display: flex;
+	cursor: pointer;
+	-webkit-app-region: no-drag;
+}
+
+.action_button{
+	height: 20px;
+	width: 20px;
+	margin: 0px;
+	padding: 0px;
+	display: inline-flex;
+	cursor: pointer;
+}
+
+.action_button:hover{
+	background-color: #101010;
+}
+
+.action_button i{
+	height: 20px;
+	width: 20px;
+	margin: 0px;
+	padding: 0px;
+	font-size: 20px;
+	cursor: pointer;
 }
