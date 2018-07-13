@@ -7,6 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" type="text/css" media="screen" href="main.css" />
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 </head>
 <body>
 	<div id="sidebar_screen">
@@ -14,7 +15,10 @@
 		<div id="side_exit" onclick="hideHamburgerMenu()"></div>
 	</div>
 	<div id="navbar">
-		<div id="topBar"></div>
+		<div id="topBar">
+			<p id="time">00:00</p>
+			<p id="time_elapsed">Time elapsed: 00:00</p>
+		</div>
 		<div id="underBar">
 			<button class="button_hamburger" onclick="showHamburgerMenu()">
 				<i class="material-icons">menu</i>
@@ -27,6 +31,35 @@
 	}
 	function hideHamburgerMenu() {
 		document.getElementById("sidebar_screen").style.display = "none";
+	}
+	setInterval(() => {
+		var time = new Date();
+		var x = time.getMinutes()
+		document.getElementById("time").innerHTML = `${time.getHours()}:${x < 10 ? "0" + x : x}`;
+	}, 1000)	
+	function startTimer() {
+		document.getElementById("time_elapsed").style.display = "block";
+		var timestamp = 0;
+		timer = setInterval(() => {
+			timestamp++;
+			var seconds = timestamp % 60;
+			if (seconds < 10) {
+				seconds = "0" + seconds;
+			}
+			var minutes = Math.floor(timestamp / 60) % 60
+			if (minutes < 10) {
+				minutes = "0" + minutes;
+			}
+			if (timestamp > 3599) {
+				var hours = Math.floor(timestamp / 60 / 60) + ":";
+			} else {
+				var hours = "";
+			}
+			document.getElementById("time_elapsed").innerHTML = `Time elapsed: ${hours}${minutes}:${seconds}`
+		}, 1000)
+	}
+	function stopTimer() {
+		clearInterval(timer);
 	}
 	</script>
 </body>
