@@ -1,0 +1,23 @@
+{
+  "name": "TF2-Backpack-Scanner",
+  "version": "0.0.1",
+  "description": "Get out of here, it's not built yet!",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AleXu224/TF2-Backpack-Scanner.git"
+  },
+  "keywords": [],
+  "author": "Squizel",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AleXu224/TF2-Backpack-Scanner/issues"
+  },
+  "homepage": "https://github.com/AleXu224/TF2-Backpack-Scanner#readme",
+  "dependencies": {
+    "electron": "^2.0.4"
+  }
+}
