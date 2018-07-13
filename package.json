@@ -1,6 +1,6 @@
 {
   "name": "tf2-backpack-scanner",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Get out of here, it's not built yet!",
   "main": "index.js",
   "scripts": {

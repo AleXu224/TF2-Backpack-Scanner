@@ -6,8 +6,28 @@
 	<title>Hello There</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
-	<p>Hey</p>
+	<div id="sidebar_screen">
+		<div id="sidebar"></div>
+		<div id="side_exit" onclick="hideHamburgerMenu()"></div>
+	</div>
+	<div id="navbar">
+		<div id="topBar"></div>
+		<div id="underBar">
+			<button class="button_hamburger" onclick="showHamburgerMenu()">
+				<i class="material-icons">menu</i>
+			</button>
+		</div>
+	</div>
+	<script>
+	function showHamburgerMenu() {
+		document.getElementById("sidebar_screen").style.display = "inline-block";
+	}
+	function hideHamburgerMenu() {
+		document.getElementById("sidebar_screen").style.display = "none";
+	}
+	</script>
 </body>
 </html>
