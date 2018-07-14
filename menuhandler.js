@@ -1,19 +1,20 @@
-var { remote } = require('electron');
-try {
-	var config = require('./config.json');
-	
-	if (config.apikey != undefined) {
+var {remote} = require('electron');
+
+require('fs').readFile("./config.json", "utf8", (err, data) => {
+	if (err) {
+		console.log(`Config has not been created yet`);
+		console.log(err);
+	} else {
+		config = JSON.parse(data);
 		document.getElementById("apikey").value = config.apikey;
 	}
-} catch (error) {
-	console.log(`Config has not been created yet`);
-}
+})
 
 var win = remote.getCurrentWindow();
 
 function maximize() {
 	if (!win.isMaximized()) {
-		win.maximize();          
+		win.maximize();
 	} else {
 		win.unmaximize();
 	}
@@ -32,11 +33,11 @@ function saveSettings() {
 	if (apikey.length != 32) {
 		document.getElementById("apikey").parentNode.children[0].innerHTML = "Error: invalid key"
 	} else {
-		var config = {
+		config = {
 			"apikey": apikey
 		}
 		require('fs').writeFile('./config.json', JSON.stringify(config), (err) => {
-			if (err){
+			if (err) {
 				console.log(err);
 			}
 		})
@@ -48,8 +49,8 @@ function clearError(i) {
 	option.children[0].innerHTML = "Api Key"
 }
 
-function scan(){
-	if (config == undefined) {
+function scan() {
+	if (config == undefined || config.apikey == undefined) {
 		openSettings();
 		document.getElementById("apikey").parentNode.children[0].innerHTML = "Error: no key is present!"
 	} else {
