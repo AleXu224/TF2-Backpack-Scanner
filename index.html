@@ -11,6 +11,17 @@
 	<link rel="stylesheet" href="waves.min.css">
 </head>
 <body>
+	<div id="settingsScreen">
+		<div id="exit_button" onclick="closeSettings()"><i class="material-icons">close</i></div>
+		<div id="settingsContainer">
+			<p>Settings</p>
+			<div class="option">
+				<p>Api Key</p>
+				<textarea id="apikey" cols="1" onclick="clearError(0)"></textarea>
+			</div>
+			<button class="button" onclick="saveSettings()">Save</button>
+		</div>
+	</div>
 	<div id="sidebar_screen">
 		<div id="sidebar">
 			<div id="backbutton">
@@ -19,14 +30,16 @@
 				</button>
 			</div>
 			<textarea name="idinput" id="idinput"></textarea>
+			<button class="sidebar_button">Scan</button>
+			<button class="sidebar_button" onclick="openSettings()">Options</button>
 		</div>
 		<div id="side_exit" onclick="hideHamburgerMenu()"></div>
 	</div>
 	<div id="navbar">
 		<div id="topBar">
 			<div id="action">
-				<div class="action_button" id="minimize" onclick="minimize()"><i class="material-icons">minimize</i></div>
-				<div class="action_button" id="maximize" onclick="maximize()"><i class="material-icons sharp">crop_din</i></div>
+				<div class="action_button" id="minimize" onclick="minimize()"><i class="material-icons">remove</i></div>
+				<div class="action_button" id="maximize" onclick="maximize()"><i class="material-icons">crop_square</i></div>
 				<div class="action_button" id="close" onclick="close_window()"><i class="material-icons">close</i></div>
 			</div>
 			<p id="time">00:00</p>
@@ -38,9 +51,10 @@
 			</button>
 		</div>
 	</div>
+	<div id="container"></div>
 	<script>
 	function showHamburgerMenu() {
-		document.getElementById("sidebar_screen").style.display = "inline-block";
+		document.getElementById("sidebar_screen").style.display = "flex";
 	}
 	function hideHamburgerMenu() {
 		document.getElementById("sidebar_screen").style.display = "none";
@@ -74,12 +88,30 @@
 	function stopTimer() {
 		clearInterval(timer);
 	}
+
+	function openSettings() {
+		document.getElementById("settingsScreen").style.display = "block";
+	}
+
+	function closeSettings() {
+		document.getElementById("settingsScreen").style.display = "none";
+	}
 	</script>
 	<script src="waves.min.js"></script>
 	<script src="menuhandler.js"></script>
 	<script>
 		Waves.init();
 		Waves.attach(".button_hamburger i", ["waves-circle"]);
+		Waves.attach(".sidebar_button", ["waves.buttons", "waves-float"]);
+		Waves.attach("#exit_button", ["waves-circle"])
+		Waves.attach(".button", ["waves-float"])
+	</script>
+	<script>
+			document.addEventListener("keydown", function (e) {
+				if (e.which === 116) {
+					location.reload();
+				}
+			});
 	</script>
 </body>
 </html>
