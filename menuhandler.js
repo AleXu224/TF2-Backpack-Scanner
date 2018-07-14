@@ -47,3 +47,14 @@ function clearError(i) {
 	var option = document.getElementsByClassName("option")[i];
 	option.children[0].innerHTML = "Api Key"
 }
+
+function scan(){
+	if (config == undefined) {
+		openSettings();
+		document.getElementById("apikey").parentNode.children[0].innerHTML = "Error: no key is present!"
+	} else {
+		var input = document.getElementById("idinput").value;
+		var ids = input.match(/7656119[0-9]{10}/g);
+		console.log(ids);
+	}
+}

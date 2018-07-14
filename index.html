@@ -30,7 +30,7 @@
 				</button>
 			</div>
 			<textarea name="idinput" id="idinput"></textarea>
-			<button class="sidebar_button">Scan</button>
+			<button class="sidebar_button" onclick="scan()">Scan</button>
 			<button class="sidebar_button" onclick="openSettings()">Options</button>
 		</div>
 		<div id="side_exit" onclick="hideHamburgerMenu()"></div>
@@ -57,7 +57,13 @@
 		document.getElementById("sidebar_screen").style.display = "flex";
 	}
 	function hideHamburgerMenu() {
-		document.getElementById("sidebar_screen").style.display = "none";
+		document.getElementById("sidebar").classList.add("slide-left");
+		document.getElementById("sidebar_screen").classList.add("fade-out");
+		setTimeout(() => {
+			document.getElementById("sidebar_screen").style.display = "none";
+			document.getElementById("sidebar").classList.remove("slide-left");			
+			document.getElementById("sidebar_screen").classList.remove("fade-out");			
+		}, 250);
 	}
 	setInterval(() => {
 		var time = new Date();
@@ -94,7 +100,12 @@
 	}
 
 	function closeSettings() {
-		document.getElementById("settingsScreen").style.display = "none";
+
+		document.getElementById("settingsScreen").classList.add("slide-lefter");
+		setTimeout(() => {
+			document.getElementById("settingsScreen").style.display = "none";
+			document.getElementById("settingsScreen").classList.remove("slide-lefter");			
+		}, 250);
 	}
 	</script>
 	<script src="waves.min.js"></script>
