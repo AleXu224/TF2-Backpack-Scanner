@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -10,16 +11,49 @@
 	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 	<link rel="stylesheet" href="waves.min.css">
 </head>
+
 <body>
+	<div id="startup_screen">
+		<p id="startup_message">If you see this then something went horribly wrong</p>
+	</div>
 	<div id="settingsScreen">
-		<div id="exit_button" onclick="closeSettings()"><i class="material-icons">close</i></div>
+		<div id="exit_button" onclick="closeSettings()">
+			<i class="material-icons">close</i>
+		</div>
 		<div id="settingsContainer">
-			<p>Settings</p>
+			<p id="SettingsMessage">Settings</p>
 			<div class="option">
-				<p>Api Key</p>
+				<p>Steam Api Key</p>
 				<textarea id="apikey" cols="1" onclick="clearError(0)"></textarea>
 			</div>
+			<div class="option">
+				<p>Backpack.tf Api Key</p>
+				<textarea id="bptfkey" cols="1" onclick="clearError(1)"></textarea>
+			</div>
+			<div class="switchContainer">
+				<p class="switchMessage">Dark Mode</p>
+				<div class="switch">
+					<input type="checkbox" class="switchCheckBox">
+					<div class="switchLine">
+						<div class="switchKnod"></div>
+					</div>
+				</div>
+			</div>
+			<div class="textField">
+				<p class="switchMessage">Max raw refined in user inventory</p>
+				<input class="textFieldInput" id="maxRef" type="text">
+			</div>
+			<div class="textField">
+				<p class="switchMessage">Max raw keys in user inventory</p>
+				<input class="textFieldInput" id="maxKeys" type="text">
+			</div>
+			<div class="textField">
+				<p class="switchMessage">Minimum item price to display (Refined)</p>
+				<input class="textFieldInput" id="minPrice" type="text">
+			</div>
 			<button class="button" onclick="saveSettings()">Save</button>
+			<button class="button" onclick="schemaRefresh()">Refresh schema</button>
+			<p id="schemaTimer">Schema last updated never</p>
 		</div>
 	</div>
 	<div id="sidebar_screen">
@@ -38,12 +72,19 @@
 	<div id="navbar">
 		<div id="topBar">
 			<div id="action">
-				<div class="action_button" id="minimize" onclick="minimize()"><i class="material-icons">remove</i></div>
-				<div class="action_button" id="maximize" onclick="maximize()"><i class="material-icons">crop_square</i></div>
-				<div class="action_button" id="close" onclick="close_window()"><i class="material-icons">close</i></div>
+				<div class="action_button" id="minimize" onclick="minimize()">
+					<i class="material-icons">remove</i>
+				</div>
+				<div class="action_button" id="maximize" onclick="maximize()">
+					<i class="material-icons">crop_square</i>
+				</div>
+				<div class="action_button" id="close" onclick="close_window()">
+					<i class="material-icons">close</i>
+				</div>
 			</div>
 			<p id="time">00:00</p>
 			<p id="time_elapsed">Time elapsed: 00:00</p>
+			<p id="users_scanned">Users scanned: 0/0</p>
 		</div>
 		<div id="underBar">
 			<button class="button_hamburger" onclick="showHamburgerMenu()">
@@ -51,62 +92,75 @@
 			</button>
 		</div>
 	</div>
-	<div id="container"></div>
+	<div id="container">
+	</div>
+	<div id="containerUser">
+		<div class="containerUser User0">
+			<div id="exit_button" onclick="closeUserContainer(0)">
+				<i class="material-icons">close</i>
+			</div>
+			<div class="containerUserInfo"></div>
+		</div>
+	</div>
 	<script>
-	function showHamburgerMenu() {
-		document.getElementById("sidebar_screen").style.display = "flex";
-	}
-	function hideHamburgerMenu() {
-		document.getElementById("sidebar").classList.add("slide-left");
-		document.getElementById("sidebar_screen").classList.add("fade-out");
-		setTimeout(() => {
-			document.getElementById("sidebar_screen").style.display = "none";
-			document.getElementById("sidebar").classList.remove("slide-left");			
-			document.getElementById("sidebar_screen").classList.remove("fade-out");			
-		}, 250);
-	}
-	setInterval(() => {
-		var time = new Date();
-		var x = time.getMinutes()
-		document.getElementById("time").innerHTML = `${time.getHours()}:${x < 10 ? "0" + x : x}`;
-	}, 1000)	
-	function startTimer() {
-		document.getElementById("time_elapsed").style.display = "block";
-		var timestamp = 0;
-		timer = setInterval(() => {
-			timestamp++;
-			var seconds = timestamp % 60;
-			if (seconds < 10) {
-				seconds = "0" + seconds;
-			}
-			var minutes = Math.floor(timestamp / 60) % 60
-			if (minutes < 10) {
-				minutes = "0" + minutes;
-			}
-			if (timestamp > 3599) {
-				var hours = Math.floor(timestamp / 60 / 60) + ":";
-			} else {
-				var hours = "";
-			}
-			document.getElementById("time_elapsed").innerHTML = `Time elapsed: ${hours}${minutes}:${seconds}`
+		function showHamburgerMenu() {
+			document.getElementById("sidebar_screen").style.display = "flex";
+		}
+
+		function hideHamburgerMenu() {
+			document.getElementById("sidebar").classList.add("slide-left");
+			document.getElementById("sidebar_screen").classList.add("fade-out");
+			setTimeout(() => {
+				document.getElementById("sidebar_screen").style.display = "none";
+				document.getElementById("sidebar").classList.remove("slide-left");
+				document.getElementById("sidebar_screen").classList.remove("fade-out");
+			}, 250);
+		}
+		setInterval(() => {
+			var time = new Date();
+			var x = time.getMinutes()
+			document.getElementById("time").innerHTML = `${time.getHours()}:${x < 10 ? "0" + x : x}`;
 		}, 1000)
-	}
-	function stopTimer() {
-		clearInterval(timer);
-	}
 
-	function openSettings() {
-		document.getElementById("settingsScreen").style.display = "block";
-	}
+		function startTimer() {
+			document.getElementById("time_elapsed").style.display = "block";
+			document.getElementById("users_scanned").style.display = "block";
+			var timestamp = 0;
+			timer = setInterval(() => {
+				timestamp++;
+				var seconds = timestamp % 60;
+				if (seconds < 10) {
+					seconds = "0" + seconds;
+				}
+				var minutes = Math.floor(timestamp / 60) % 60
+				if (minutes < 10) {
+					minutes = "0" + minutes;
+				}
+				if (timestamp > 3599) {
+					var hours = Math.floor(timestamp / 60 / 60) + ":";
+				} else {
+					var hours = "";
+				}
+				document.getElementById("time_elapsed").innerHTML = `Time elapsed: ${hours}${minutes}:${seconds}`
+			}, 1000)
+		}
 
-	function closeSettings() {
+		function stopTimer() {
+			clearInterval(timer);
+		}
 
-		document.getElementById("settingsScreen").classList.add("slide-lefter");
-		setTimeout(() => {
-			document.getElementById("settingsScreen").style.display = "none";
-			document.getElementById("settingsScreen").classList.remove("slide-lefter");			
-		}, 250);
-	}
+		function openSettings() {
+			document.getElementById("settingsScreen").style.display = "block";
+		}
+
+		function closeSettings() {
+
+			document.getElementById("settingsScreen").classList.add("slide-lefter");
+			setTimeout(() => {
+				document.getElementById("settingsScreen").style.display = "none";
+				document.getElementById("settingsScreen").classList.remove("slide-lefter");
+			}, 250);
+		}
 	</script>
 	<script src="waves.min.js"></script>
 	<script src="menuhandler.js"></script>
@@ -116,13 +170,15 @@
 		Waves.attach(".sidebar_button", ["waves.buttons", "waves-float"]);
 		Waves.attach("#exit_button", ["waves-circle"])
 		Waves.attach(".button", ["waves-float"])
+		Waves.attach(".closeButton", ["waves-circle"])
 	</script>
 	<script>
-			document.addEventListener("keydown", function (e) {
-				if (e.which === 116) {
-					location.reload();
-				}
-			});
+		document.addEventListener("keydown", function (e) {
+			if (e.which === 116) {
+				location.reload();
+			}
+		});
 	</script>
 </body>
+
 </html>

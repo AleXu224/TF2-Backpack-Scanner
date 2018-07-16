@@ -1,6 +1,6 @@
 {
   "name": "tf2-backpack-scanner",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "A backpack scanner that tries to look nice.",
   "main": "index.js",
   "scripts": {
@@ -18,6 +18,11 @@
   },
   "homepage": "https://github.com/AleXu224/TF2-Backpack-Scanner#readme",
   "dependencies": {
-    "electron": "^2.0.4"
+    "await": "^0.2.6",
+    "electron": "^2.0.4",
+    "jquery": "^3.3.1",
+    "node-fetch": "^2.1.2",
+    "node-vdf": "0.0.3",
+    "request": "^2.87.0"
   }
 }
