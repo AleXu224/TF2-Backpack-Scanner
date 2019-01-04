@@ -331,7 +331,7 @@ button {
 	position: fixed;
 	background-color: #fff;
 	z-index: -11;
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 
 #schemaTimer {

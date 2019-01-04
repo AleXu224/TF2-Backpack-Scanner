@@ -7,6 +7,7 @@ var fetch = require('node-fetch');
 var vdf = require('node-vdf');
 var request = require('request');
 var $ = require('jquery');
+var SteamID = require('steamid');
 
 require('fs').readFile("./config.json", "utf8", async function (err, data) {
 	if (err) {
@@ -34,7 +35,7 @@ require('fs').readFile("./config.json", "utf8", async function (err, data) {
 			})
 			require('fs').readFile("./schema_bptf.json", "utf8", (err, data_schema_bptf) => {
 				bptf_schema = JSON.parse(data_schema_bptf);
-				keyprice = bptf_schema.response.items["Mann Co. Supply Crate Key"].prices[6].Tradable.Craftable[0].value;			
+				keyprice = bptf_schema.response.items["Mann Co. Supply Crate Key"].prices[6].Tradable.Craftable[0].value;
 			})
 		}
 	}
@@ -224,7 +225,20 @@ function scan() {
 	}
 	isScanning = true;
 	var input = document.getElementById("idinput").value;
-	var ids = input.match(/7656119[0-9]{10}/g);
+	var ids = [];
+	var ids1 = input.match(/7656119[0-9]{10}/g);
+	var ids2 = input.match(/\[U:1:[0-9]{9}\]/g);
+	console.log(ids1);
+	console.log(ids2);
+	for (var id in ids2) {
+		console.log(ids2[id]);
+		var newSteamID = new SteamID(ids2[id]);
+		var newID = newSteamID.getSteamID64();
+		console.log(newID);
+		ids.push(newID);
+	}
+	console.log(ids);
+	var ids = ids.concat(ids1);
 	startScan(ids)
 }
 
