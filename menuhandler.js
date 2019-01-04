@@ -228,16 +228,11 @@ function scan() {
 	var ids = [];
 	var ids1 = input.match(/7656119[0-9]{10}/g);
 	var ids2 = input.match(/\[U:1:[0-9]{9}\]/g);
-	console.log(ids1);
-	console.log(ids2);
 	for (var id in ids2) {
-		console.log(ids2[id]);
 		var newSteamID = new SteamID(ids2[id]);
 		var newID = newSteamID.getSteamID64();
-		console.log(newID);
 		ids.push(newID);
 	}
-	console.log(ids);
 	var ids = ids.concat(ids1);
 	startScan(ids)
 }
