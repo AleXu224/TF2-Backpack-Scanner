@@ -90,6 +90,10 @@
 			<button class="button_hamburger" onclick="showHamburgerMenu()">
 				<i class="material-icons">menu</i>
 			</button>
+			<div class="filler"></div>
+			<button class="button_clear" onclick="clearSearch()" title="Clear all">
+				<i class="material-icons">clear</i>
+			</button>
 		</div>
 	</div>
 	<div id="container">
@@ -171,6 +175,7 @@
 		Waves.attach("#exit_button", ["waves-circle"])
 		Waves.attach(".button", ["waves-float"])
 		Waves.attach(".closeButton", ["waves-circle"])
+		Waves.attach(".button_clear i", ["waves-circle"])
 	</script>
 	<script>
 		document.addEventListener("keydown", function (e) {

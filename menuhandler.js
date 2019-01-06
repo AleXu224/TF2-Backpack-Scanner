@@ -95,6 +95,10 @@ $(document).on('click', 'a[href^="http"]', function (event) {
 	shell.openExternal(this.href);
 });
 
+async function clearSearch() {
+	document.getElementById("container").innerHTML = "";
+}
+
 async function startAgoTimer() {
 	setInterval(() => {
 		var timer = document.getElementById("schemaTimer");
