@@ -425,7 +425,6 @@ function scrapToRef(scrapNumber) {
 async function getUserInventory(steamid) {
 	var inventory_page = await fetch(`http://api.steampowered.com/ieconitems_440/getplayeritems/v0001/?key=${config.apikey}&steamid=${steamid}`);
 	var inventory = await inventory_page.json();
-	console.log(inventory);
 	if (inventory.result == undefined) {
 		return "private";
 	}
