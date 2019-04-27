@@ -241,8 +241,16 @@ function scan() {
 	startScan(ids)
 }
 
-async function showDetails() {
-	alert(`Not implemented yet`);
+async function showDetails(id) {
+	var container = document.getElementById(id);
+	container.classList.add("expanded");
+	container.children[2].setAttribute("onClick", `hideDetails(${id})`);
+}
+
+async function hideDetails(id) {
+	var container = document.getElementById(id);
+	container.classList.remove("expanded");
+	container.children[2].setAttribute("onClick", `showDetails(${id})`);
 }
 
 async function startScan(ids) {
@@ -372,7 +380,7 @@ async function startScan(ids) {
 					} else {
 						currency_name = "Hat";
 					}
-					userToSend += `<div class="item_container2" style="order: -${Math.floor(orderPrice)}">
+					userToSend += `<div class="item_container2" style="order: -${Math.floor(orderPrice)}" title="${item.name_original}">
 										<div class="${item.craftable == 1 ? "" : "Craft "}${item.quality_name} item">
 											<img src="${item.image}">
 										</div>
@@ -417,6 +425,7 @@ function scrapToRef(scrapNumber) {
 async function getUserInventory(steamid) {
 	var inventory_page = await fetch(`http://api.steampowered.com/ieconitems_440/getplayeritems/v0001/?key=${config.apikey}&steamid=${steamid}`);
 	var inventory = await inventory_page.json();
+	console.log(inventory);
 	if (inventory.result == undefined) {
 		return "private";
 	}
@@ -428,6 +437,11 @@ async function getUserInventory(steamid) {
 	}
 	var response = [];
 	for (var i in inventory.result.items) {
+		killstreak = undefined;
+		australium = undefined;
+		craftable = undefined;
+		name = undefined;
+		name_original = undefined;
 		var item = inventory.result.items[i];
 		if (item.flag_cannot_trade != undefined) {
 			continue;
@@ -451,10 +465,10 @@ async function getUserInventory(steamid) {
 			}
 		}
 		if (australium == undefined) {
-			australium = -1;
+			var australium = -1;
 		}
 		if (killstreak == undefined) {
-			killstreak = 0;
+			var killstreak = 0;
 		}
 		for (var l in schema) {
 			var schem = schema[l];
@@ -468,7 +482,7 @@ async function getUserInventory(steamid) {
 		if (australium == 1) {
 			name_original = `Australium ${name_original}`;
 		}
-		if (killstreak != 0) {
+		if (killstreak !== 0) {
 			name_original = `Killstreak ${name_original}`;
 			if (killstreak == 3) {
 				name_original = `Professional ${name_original}`;

@@ -404,6 +404,15 @@ button {
 	background-color: rgba(255,255,255,0.25);
 }
 
+.user_container.expanded {
+	height: auto;
+}
+
+.user_container.expanded .item_container {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
 .user_container a img{
 	height: 84px;
 	width: 84px;
