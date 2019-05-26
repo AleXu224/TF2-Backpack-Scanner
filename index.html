@@ -1,189 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-	<meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Hello There</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<link rel="stylesheet" type="text/css" media="screen" href="main.css" />
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-	<link rel="stylesheet" href="waves.min.css">
+	<title>BP-Scanner</title>
 </head>
 
 <body>
-	<div id="startup_screen">
-		<p id="startup_message">If you see this then something went horribly wrong</p>
-	</div>
-	<div id="settingsScreen">
-		<div id="exit_button" onclick="closeSettings()">
-			<i class="material-icons">close</i>
-		</div>
-		<div id="settingsContainer">
-			<p id="SettingsMessage">Settings</p>
-			<div class="option">
-				<p>Steam Api Key</p>
-				<textarea id="apikey" cols="1" onclick="clearError(0)"></textarea>
-			</div>
-			<div class="option">
-				<p>Backpack.tf Api Key</p>
-				<textarea id="bptfkey" cols="1" onclick="clearError(1)"></textarea>
-			</div>
-			<div class="switchContainer">
-				<p class="switchMessage">Dark Mode</p>
-				<div class="switch">
-					<input type="checkbox" class="switchCheckBox">
-					<div class="switchLine">
-						<div class="switchKnod"></div>
-					</div>
-				</div>
-			</div>
-			<div class="textField">
-				<p class="switchMessage">Max raw refined in user inventory</p>
-				<input class="textFieldInput" id="maxRef" type="text">
-			</div>
-			<div class="textField">
-				<p class="switchMessage">Max raw keys in user inventory</p>
-				<input class="textFieldInput" id="maxKeys" type="text">
-			</div>
-			<div class="textField">
-				<p class="switchMessage">Minimum item price to display (Refined)</p>
-				<input class="textFieldInput" id="minPrice" type="text">
-			</div>
-			<button class="button" onclick="saveSettings()">Save</button>
-			<button class="button" onclick="schemaRefresh()">Refresh schema</button>
-			<p id="schemaTimer">Schema last updated never</p>
-		</div>
-	</div>
-	<div id="sidebar_screen">
-		<div id="sidebar">
-			<div id="backbutton">
-				<button class="button_hamburger" onclick="hideHamburgerMenu()">
-					<i id="back_hamburger" class="material-icons">arrow_back</i>
-				</button>
-			</div>
-			<textarea name="idinput" id="idinput"></textarea>
-			<button class="sidebar_button" onclick="scan()">Scan</button>
-			<button class="sidebar_button" onclick="openSettings()">Options</button>
-		</div>
-		<div id="side_exit" onclick="hideHamburgerMenu()"></div>
-	</div>
-	<div id="navbar">
-		<div id="topBar">
-			<div id="action">
-				<div class="action_button" id="minimize" onclick="minimize()">
-					<i class="material-icons">remove</i>
-				</div>
-				<div class="action_button" id="maximize" onclick="maximize()">
-					<i class="material-icons">crop_square</i>
-				</div>
-				<div class="action_button" id="close" onclick="close_window()">
-					<i class="material-icons">close</i>
-				</div>
-			</div>
-			<p id="time">00:00</p>
-			<p id="time_elapsed">Time elapsed: 00:00</p>
-			<p id="users_scanned">Users scanned: 0/0</p>
-		</div>
-		<div id="underBar">
-			<button class="button_hamburger" onclick="showHamburgerMenu()">
-				<i class="material-icons">menu</i>
-			</button>
-			<div class="filler"></div>
-			<button class="button_clear" onclick="clearSearch()" title="Clear all">
-				<i class="material-icons">clear</i>
-			</button>
-		</div>
-	</div>
 	<div id="container">
-	</div>
-	<div id="containerUser">
-		<div class="containerUser User0">
-			<div id="exit_button" onclick="closeUserContainer(0)">
-				<i class="material-icons">close</i>
+		<div id="titlebar">
+			<div id="action"></div>
+			<div id="title">Squizel's Scanner</div>
+			<div id="buttons">
+				<div class="button" onclick="minimize()">
+					<div class="minimize"></div>
+				</div>
+				<div class="button" onclick="maximize()">
+					<div class="maximize"></div>
+				</div>
+				<div class="button red" onclick="close_window()">
+					<div class="close"></div>
+				</div>
 			</div>
-			<div class="containerUserInfo"></div>
+		</div>
+		<div id="scaninfo" class="hidden">
+			<div class="options">
+				<div class="option" onclick="closeWindow('scaninfo')" tooltip="Back" pos="right">
+					<i class="material-icons">arrow_back</i>
+				</div>
+			</div>
+			<div class="spacer"></div>
+			<textarea id="userScan" placeholder="User List"></textarea>
+			<div class="settings">
+				<div class="subtitle">Scan settings</div>
+				<div class="note">Leave fields empty for their default value</div>
+				<div class="valueInput">
+					<div class="inputName">Max refined in user inventory</div>
+					<input type="text" id="maxRef">
+					<div class="underline"></div>
+				</div>
+				<div class="valueInput">
+					<div class="inputName">Max keys in user inventory</div>
+					<input type="text" id="maxKeys">
+					<div class="underline"></div>
+				</div>
+				<div class="valueInput">
+					<div class="inputName">Minimum item price (refined)</div>
+					<input type="text" id="minRef">
+					<div class="underline"></div>
+				</div>
+				<div class="valueInput">
+					<div class="inputName">Minimum item price (keys)</div>
+					<input type="text" id="minKeys">
+					<div class="underline"></div>
+				</div>
+			</div>
+			<div class="spacer"></div>
+		</div>
+		<div id="settings" class="hidden">
+			<div class="options">
+				<div class="option" onclick="closeWindow('settings')" tooltip="Back" pos="right">
+					<i class="material-icons">arrow_back</i>
+				</div>
+			</div>
+			<div class="spacer"></div>
+			<div class="settings">
+				<div class="subtitle">Settings</div>
+				<div class="note">All fields are required</div>
+				<div class="valueInput large">
+					<div class="inputName">Steam Api Key</div>
+					<input type="text" id="apikey">
+					<div class="underline"></div>
+				</div>
+				<div class="valueInput large">
+					<div class="inputName">Backpack.tf Api Key</div>
+					<input type="text" id="bptfkey">
+					<div class="underline"></div>
+				</div>
+				<div class="btnContainer">
+					<div class="btn" onclick="saveSettings()">Save</div>
+				</div>
+			</div>
+			<div class="spacer"></div>
+		</div>
+		<div id="splash" class="hidden">
+			<div class="content">
+				<div class="subtitle">Configuring app</div>
+				<div id="progress">Doing some stuff</div>
+			</div>
+		</div>
+
+		<div id="content">
+			<div id="sidebar">
+				<div class="option" tooltip="Scan options" pos="right" onclick="openWindow('scaninfo')">
+					<i class="material-icons">menu</i>
+				</div>
+				<div class="option" id="start" tooltip="Start scan" pos="right" onclick="scan()">
+					<i class="material-icons">play_arrow</i>
+				</div>
+				<div class="option hidden" id="stop" tooltip="Stop scan" pos="right" onclick="stopScan()">
+					<i class="material-icons">stop</i>
+				</div>
+				<div class="spacer"></div>
+				<div class="option" tooltip="Settings" pos="right" onclick="openWindow('settings')">
+					<i class="material-icons">settings</i>
+				</div>
+			</div>
+			<div id="userlist">
+
+			</div>
 		</div>
 	</div>
 	<script>
-		function showHamburgerMenu() {
-			document.getElementById("sidebar_screen").style.display = "flex";
-		}
-
-		function hideHamburgerMenu() {
-			document.getElementById("sidebar").classList.add("slide-left");
-			document.getElementById("sidebar_screen").classList.add("fade-out");
+		async function openWindow(id) {
+			var window = document.getElementById(id);
+			window.classList.remove("hidden");
+			window.classList.add("slideIn");
 			setTimeout(() => {
-				document.getElementById("sidebar_screen").style.display = "none";
-				document.getElementById("sidebar").classList.remove("slide-left");
-				document.getElementById("sidebar_screen").classList.remove("fade-out");
-			}, 250);
+				window.classList.remove("slideIn");
+			}, 200);
 		}
-		setInterval(() => {
-			var time = new Date();
-			var x = time.getMinutes()
-			document.getElementById("time").innerHTML = `${time.getHours()}:${x < 10 ? "0" + x : x}`;
-		}, 1000)
-
-		function startTimer() {
-			document.getElementById("time_elapsed").style.display = "block";
-			document.getElementById("users_scanned").style.display = "block";
-			var timestamp = 0;
-			timer = setInterval(() => {
-				timestamp++;
-				var seconds = timestamp % 60;
-				if (seconds < 10) {
-					seconds = "0" + seconds;
-				}
-				var minutes = Math.floor(timestamp / 60) % 60
-				if (minutes < 10) {
-					minutes = "0" + minutes;
-				}
-				if (timestamp > 3599) {
-					var hours = Math.floor(timestamp / 60 / 60) + ":";
-				} else {
-					var hours = "";
-				}
-				document.getElementById("time_elapsed").innerHTML = `Time elapsed: ${hours}${minutes}:${seconds}`
-			}, 1000)
-		}
-
-		function stopTimer() {
-			clearInterval(timer);
-		}
-
-		function openSettings() {
-			document.getElementById("settingsScreen").style.display = "block";
-		}
-
-		function closeSettings() {
-
-			document.getElementById("settingsScreen").classList.add("slide-lefter");
+		async function closeWindow(id) {
+			var window = document.getElementById(id);
+			window.classList.add("slideOut");
 			setTimeout(() => {
-				document.getElementById("settingsScreen").style.display = "none";
-				document.getElementById("settingsScreen").classList.remove("slide-lefter");
-			}, 250);
+				window.classList.remove("slideOut");
+				window.classList.add("hidden");
+			}, 200);
+		}
+		async function expand(id) {
+			var user = document.getElementById(id);
+			user.classList.toggle("expanded");
+
 		}
 	</script>
-	<script src="waves.min.js"></script>
-	<script src="menuhandler.js"></script>
-	<script>
-		Waves.init();
-		Waves.attach(".button_hamburger i", ["waves-circle"]);
-		Waves.attach(".sidebar_button", ["waves.buttons", "waves-float"]);
-		Waves.attach("#exit_button", ["waves-circle"])
-		Waves.attach(".button", ["waves-float"])
-		Waves.attach(".closeButton", ["waves-circle"])
-		Waves.attach(".button_clear i", ["waves-circle"])
-	</script>
-	<script>
-		document.addEventListener("keydown", function (e) {
-			if (e.which === 116) {
-				location.reload();
-			}
-		});
-	</script>
+	<script src="main.js"></script>
 </body>
 
 </html>

@@ -12,24 +12,16 @@ var SteamID = require('steamid');
 require('fs').readFile("./config.json", "utf8", async function (err, data) {
 	if (err) {
 		console.log(`Config has not been created yet`);
-		openSettings();
-		document.getElementById("apikey").parentNode.children[0].innerHTML = "Error: no key is present!"
-		document.getElementById("bptfkey").parentNode.children[0].innerHTML = "Error: no key is present!"
-		document.getElementById("maxRef").value = -1;
-		document.getElementById("maxKeys").value = -1;
-		document.getElementById("minPrice").value = 0;
+		openWindow("settings");
 	} else {
 		config = JSON.parse(data);
 		document.getElementById("apikey").value = config.apikey;
 		document.getElementById("bptfkey").value = config.bptfkey;
-		document.getElementById("maxRef").value = config.maxref;
-		document.getElementById("maxKeys").value = config.maxkeys;
-		document.getElementById("minPrice").value = config.minprice;
 		var ts = Math.floor(new Date() / 1000);
 		if (config.ts == undefined || config.ts + 60 * 60 * 24 * 7 < ts) {
 			schemaRefresh();
 		} else {
-			startAgoTimer();
+			// startAgoTimer();
 			require('fs').readFile("./schema.json", "utf8", (err, data_schema) => {
 				schema = JSON.parse(data_schema);
 			})
@@ -42,30 +34,35 @@ require('fs').readFile("./config.json", "utf8", async function (err, data) {
 })
 
 async function schemaRefresh() {
-	var startup = document.getElementById("startup_screen");
-	startup.style.display = "flex";
-	startup.children[0].innerHTML = "Downloading the item schema (1/2)";
+	openWindow("splash");
+	var progress = document.getElementById("progress");
+	progress.innerText = "Downloading the item schema (1/5)";
 	var schema_1_page = await fetch(`http://api.steampowered.com/IEconItems_440/GetSchemaItems/v0001/?key=${config.apikey}&language=en_US`);
 	var schema_1 = await schema_1_page.json();
 	await timeout(2000);
+	progress.innerText = "Downloading the item schema (2/5)";
 	var schema_2_page = await fetch(`http://api.steampowered.com/IEconItems_440/GetSchemaItems/v0001/?key=${config.apikey}&language=en_US&start=1150`);
 	var schema_2 = await schema_2_page.json();
 	await timeout(2000);
+	progress.innerText = "Downloading the item schema (3/5)";
 	var schema_3_page = await fetch(`http://api.steampowered.com/IEconItems_440/GetSchemaItems/v0001/?key=${config.apikey}&language=en_US&start=8303`);
 	var schema_3 = await schema_3_page.json();
 	await timeout(2000);
+	progress.innerText = "Downloading the item schema (4/5)";
 	var schema_4_page = await fetch(`http://api.steampowered.com/IEconItems_440/GetSchemaItems/v0001/?key=${config.apikey}&language=en_US&start=9336`);
 	var schema_4 = await schema_4_page.json();
 	await timeout(2000);
+	progress.innerText = "Downloading the item schema (5/5)";
 	var schema_5_page = await fetch(`http://api.steampowered.com/IEconItems_440/GetSchemaItems/v0001/?key=${config.apikey}&language=en_US&start=30044`);
 	var schema_5 = await schema_5_page.json();
+	progress.innerText = "Merging item schema";
 	schema = schema_1.result.items.concat(schema_2.result.items, schema_3.result.items, schema_4.result.items, schema_5.result.items);
 	require('fs').writeFile('./schema.json', JSON.stringify(schema), (err) => {
 		if (err) {
 			console.log(err);
 		}
 	})
-	startup.children[0].innerHTML = "Downloading the backpack.tf item schema (2/2)";
+	progress.innerText = "Downloading the backpack.tf prices";
 	var bptf_schema_page = await fetch(`https://backpack.tf/api/IGetPrices/v4?key=${config.bptfkey}`);
 	bptf_schema = await bptf_schema_page.json();
 	keyprice = bptf_schema.response.items["Mann Co. Supply Crate Key"].prices[6].Tradable.Craftable[0].value;
@@ -74,6 +71,7 @@ async function schemaRefresh() {
 			console.log(err);
 		}
 	})
+	progress.innerText = "Done";
 	var ts = Math.floor(new Date() / 1000);
 	config.ts = ts;
 	require('fs').writeFile('./config.json', JSON.stringify(config), (err) => {
@@ -81,11 +79,7 @@ async function schemaRefresh() {
 			console.log(err);
 		}
 	})
-	startup.classList.add("slide-lefter");
-	setTimeout(() => {
-		startup.style.display = "none";
-		startAgoTimer();
-	}, 250);
+	closeWindow("splash");
 }
 
 const shell = require('electron').shell;
@@ -95,8 +89,8 @@ $(document).on('click', 'a[href^="http"]', function (event) {
 	shell.openExternal(this.href);
 });
 
-async function clearSearch() {
-	document.getElementById("container").innerHTML = "";
+async function openLink(link) {
+	shell.openExternal(link);
 }
 
 async function startAgoTimer() {
@@ -144,19 +138,10 @@ function timeout(ms) {
 function saveSettings() {
 	var apikey = document.getElementById("apikey").value;
 	var bptfkey = document.getElementById("bptfkey").value;
-	var maxref = parseInt(document.getElementById("maxRef").value);
-	var maxkeys = parseInt(document.getElementById("maxKeys").value);
-	var minprice = parseInt(document.getElementById("minPrice").value);
 	if (apikey.length != 32) {
-		document.getElementById("apikey").parentNode.children[0].innerHTML = "Error: invalid key"
+		alert(`The Steam api key key is invalid`);
 	} else if (bptfkey.length != 24) {
-		document.getElementById("bptfkey").parentNode.children[0].innerHTML = "Error: invalid key"
-	} else if (isNaN(maxref)) {
-		alert(`Max refined must be a number`);
-	} else if (isNaN(maxkeys)) {
-		alert(`Max keys must be a number`);
-	} else if (isNaN(minprice)) {
-		alert(`Minimum price must be a number`);
+		alert(`The Backpack.tf api key is invalid`);
 	} else {
 		try {
 			if (config != undefined) {
@@ -164,20 +149,14 @@ function saveSettings() {
 				config = {
 					"apikey": apikey,
 					"bptfkey": bptfkey,
-					ts: config.ts,
-					maxref: maxref,
-					maxkeys: maxkeys,
-					minprice: minprice
+					ts: config.ts
 				}
 			}
 		} catch (error) {
 			var restartAfter = true;
 			config = {
 				"apikey": apikey,
-				"bptfkey": bptfkey,
-				maxref: maxref,
-				maxkeys: maxkeys,
-				minprice: minprice
+				"bptfkey": bptfkey
 			}
 		}
 		require('fs').writeFile('./config.json', JSON.stringify(config), (err) => {
@@ -191,44 +170,53 @@ function saveSettings() {
 	}
 }
 
-function clearError(i) {
-	var option = document.getElementsByClassName("option")[i];
-	if (i == 0) {
-		option.children[0].innerHTML = "Steam Api Key"
-	} else if (i == 1) {
-		option.children[0].innerHTML = "Backpack.tf Api Key"
-	}
-}
-
-async function closeContainer(id) {
-	var container = document.getElementById(id);
-	container.classList.add("slide-lefter");
-	setTimeout(() => {
-		container.style.display = "none";
-		container.classList.remove("slide-lefter")
-	}, 250);
-}
-
-var isScanning = false;
+stop = true;
 
 function scan() {
-	if (isScanning == true) {
-		alert(`scanning`);
-		return false;
-	}
 	try {
 		if (config == undefined) {
 			openSettings();
-			document.getElementById("apikey").parentNode.children[0].innerHTML = "Error: no key is present!";
 			return false;
 		}
 	} catch (error) {
-		openSettings();
-		document.getElementById("apikey").parentNode.children[0].innerHTML = "Error: no key is present!";
+		openWindow("settings");
 		return false;
 	}
-	isScanning = true;
-	var input = document.getElementById("idinput").value;
+	var maxRef = document.getElementById("maxRef").value;
+	var maxKeys = document.getElementById("maxKeys").value;
+	var minRef = document.getElementById("minRef").value;
+	var minKeys = document.getElementById("minKeys").value;
+
+	if (maxRef == "") {
+		maxRef = -1;
+	}
+	if (maxKeys == "") {
+		maxKeys = -1;
+	}
+	if (minRef == "") {
+		minRef = 0;
+	}
+	if (minKeys == "") {
+		minKeys = 0;
+	}
+
+	maxRef = parseFloat(maxRef);
+	maxKeys = parseFloat(maxKeys);
+	minRef = parseFloat(minRef);
+	minKeys = parseFloat(minKeys);
+
+	if (isNaN(maxRef) || isNaN(maxKeys) || isNaN(minRef) || isNaN(minKeys)) {
+		alert("All inputs have to be numbers");
+		return false;
+	}
+	var settings = {
+		maxRef,
+		maxKeys,
+		minRef,
+		minKeys
+	}
+
+	var input = document.getElementById("userScan").value;
 	var ids = [];
 	var ids1 = input.match(/7656119[0-9]{10}/g);
 	var ids2 = input.match(/\[U:1:[0-9]{9}\]/g);
@@ -238,41 +226,98 @@ function scan() {
 		ids.push(newID);
 	}
 	var ids = ids.concat(ids1);
-	startScan(ids)
+	startScan(ids, settings)
 }
 
-async function showDetails(id) {
-	var container = document.getElementById(id);
-	container.classList.add("expanded");
-	container.children[2].setAttribute("onClick", `hideDetails(${id})`);
+async function removeUser(id) {
+	document.getElementById(id).remove();
 }
 
-async function hideDetails(id) {
-	var container = document.getElementById(id);
-	container.classList.remove("expanded");
-	container.children[2].setAttribute("onClick", `showDetails(${id})`);
+async function userBuilder(userObject, n) {
+	var personIcon = document.createElement("i");
+	personIcon.classList.add("material-icons");
+	personIcon.appendChild(document.createTextNode("person"));
+	var addIcon = document.createElement("i");
+	addIcon.classList.add("material-icons");
+	addIcon.appendChild(document.createTextNode("add"));
+	var accountIcon = document.createElement("i");
+	accountIcon.classList.add("material-icons");
+	accountIcon.appendChild(document.createTextNode("account_circle"));
+	var accountImage = document.createElement("img");
+	accountImage.setAttribute("src", userObject.avatarmedium);
+	var deleteIcon = document.createElement("i");
+	deleteIcon.classList.add("material-icons");
+	deleteIcon.appendChild(document.createTextNode("delete"));
+	var spacer = document.createElement("div");
+	spacer.classList.add("spacer");
+
+	var avatarCircle = document.createElement("div");
+	var addButton = document.createElement("div");
+	var profileButton = document.createElement("div");
+	var removeButton = document.createElement("div");
+	avatarCircle.classList.add("profile");
+	avatarCircle.setAttribute("tooltip", userObject.personaname);
+	avatarCircle.setAttribute("pos", "right");
+	avatarCircle.appendChild(accountImage);
+
+	addButton.classList.add("action");
+	profileButton.classList.add("action");
+	removeButton.classList.add("action");
+
+	addButton.setAttribute("tooltip", "Add friend");
+	addButton.setAttribute("onclick", `openLink('steam://friends/add/${userObject.steamid}')`);
+	profileButton.setAttribute("tooltip", "Backpack.tf page");
+	profileButton.setAttribute("onclick", `openLink('https://backpack.tf/profiles/${userObject.steamid}')`);
+	removeButton.setAttribute("tooltip", "Remove listing");
+	removeButton.setAttribute("onclick", `removeUser(${n})`);
+	addButton.setAttribute("pos", "bottom");
+	profileButton.setAttribute("pos", "bottom");
+	removeButton.setAttribute("pos", "left");
+
+	addButton.appendChild(addIcon);
+	profileButton.appendChild(accountIcon);
+	removeButton.appendChild(deleteIcon);
+
+	var actions = document.createElement("div");
+	actions.classList.add("actions");
+	actions.appendChild(avatarCircle);
+	actions.appendChild(addButton);
+	actions.appendChild(profileButton);
+	actions.appendChild(spacer);
+	actions.appendChild(removeButton);
+
+	var itemContainer = document.createElement("div");
+	itemContainer.classList.add("items");
+
+	var user = document.createElement("div");
+	user.classList.add("user");
+	user.id = n;
+
+	user.appendChild(actions);
+	user.appendChild(itemContainer);
+
+	return user;
 }
 
-async function startScan(ids) {
-	startTimer();
-	document.getElementById("users_scanned").innerText = `Users scanned: 0/${ids.length}`
-	if (config.minprice > keyprice) {
-		var a = config.minprice / keyprice
-		var minimumprice = {
-			value: a,
-			currency: "keys"
-		}
-	} else {
-		var minimumprice = {
-			value: config.minprice,
-			currency: "metal"
-		}
-	}
+async function stopScan() {
+	stop = true;
+	document.getElementById("stop").classList.add("hidden");
+	document.getElementById("start").classList.remove("hidden");
+}
+
+async function startScan(ids, settings) {
+	document.getElementById("start").classList.add("hidden");
+	document.getElementById("stop").classList.remove("hidden");
+	stop = false;
 	var id_string = "";
 	var usersToScan = ids.length;
 	var usersScanned = 0;
-	for (var i in ids) {
-		i = parseInt(i);
+	nextScan(0);
+	async function nextScan(i) {
+		if (i >= ids.length) {
+			stopScan();
+			return false;
+		}
 		var scan = false;
 		var id = ids[i];
 		id_string += `${id},`
@@ -283,7 +328,10 @@ async function startScan(ids) {
 		} else if ((i + 1) % 100 == 0) {
 			scan = "yes";
 		}
-		if (scan == "yes") {
+		if (stop === true) {
+			return false;
+		}
+		if (scan == "yes" && stop === false) {
 			var profile_page = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${config.apikey}&format=json&steamids=${id_string}`);
 			var profile = await profile_page.json();
 			if (usersToScan < 100) {
@@ -292,45 +340,22 @@ async function startScan(ids) {
 				usersToScan -= 100;
 			}
 			for (var j in profile.response.players) {
-				document.getElementById("users_scanned").innerText = `Users scanned: ${++usersScanned}/${ids.length}`
-				var user = profile.response.players[j];
-				if (user.communityvisibilitystate != 3) {
+				if (stop === true) {
+					return false;
+				}
+				// document.getElementById("users_scanned").innerText = `Users scanned: ${++usersScanned}/${ids.length}`
+				var userObject = profile.response.players[j];
+				if (userObject.communityvisibilitystate != 3) {
 					continue;
 				}
-				var inventory = await getUserInventory(user.steamid);
+				var inventory = await getUserInventory(userObject.steamid);
 				if (inventory == "private") {
 					continue;
 				} else if (inventory == "timeout") {
-					var inventory = await getUserInventory(user.steamid);
+					var inventory = await getUserInventory(userObject.steamid);
 				}
-				// var userToSend = `<div class="user_container" id="${i * 1000 + j}">
-				// <a href="https://backpack.tf/profiles/${user.steamid}" target="_blank">
-				// 	<img src="${user.avatarmedium}">
-				// </a>
-				// <div class="item_container" onclick="showDetails(${i * 1000 + j})">`
-				var n = Math.floor((Math.random() * (100000 - 1)) + 1);
-				var userToSend = `<div class="user_container" id="${n}">
-				<a href="https://backpack.tf/profiles/${user.steamid}" target="_blank">
-					<img src="${user.avatarmedium}">
-				</a>
-				<div class="user_options">
-					<div class="user_option">
-						<a href="steam://friends/add/${user.steamid}">
-							<i class="material-icons">add</i>
-						</a>
-					</div>
-					<div class="user_option">
-						<a href="http://steamcommunity.com/profiles/${user.steamid}">
-							<i class="material-icons">person</i>
-						</a>
-					</div>
-					<div class="user_option" onclick="closeContainer(${n})">
-						<a href="#">
-							<i class="material-icons">close</i>
-						</a>
-					</div>
-				</div>
-				<div class="item_container" onclick="showDetails(${n})">`
+				var n = Math.floor((Math.random() * (1000000000000 - 1)) + 1);
+				var user = await userBuilder(userObject, n);
 				inventoryScrap = 0;
 				inventoryKeys = 0;
 				items = 0;
@@ -357,12 +382,16 @@ async function startScan(ids) {
 					} catch (error) {
 						continue;
 					}
-					if (minimumprice.currency == price.currency) {
-						if (minimumprice.value > price.value) {
+					if (price.currency == "keys") {
+						if (price.value < settings.minKeys + settings.minRef / keyprice) {
 							continue;
 						}
-					} else if (minimumprice.currency == "keys") {
-						continue;
+					} else {
+						if (0 < settings.minKeys) {
+							continue;
+						} else if (price.value < settings.minRef) {
+							continue;
+						}
 					}
 					var orderPrice = 0;
 					if (price.currency == "keys") {
@@ -380,30 +409,47 @@ async function startScan(ids) {
 					} else {
 						currency_name = "Hat";
 					}
-					userToSend += `<div class="item_container2" style="order: -${Math.floor(orderPrice)}" title="${item.name_original}">
-										<div class="${item.craftable == 1 ? "" : "Craft "}${item.quality_name} item">
-											<img src="${item.image}">
-										</div>
-										<div class="item_price">${price.value} ${currency_name}</div>
-									</div>`
+
+					var itemElement = document.createElement("div");
+					itemElement.classList.add("item");
+					itemElement.classList.add(item.quality_name);
+					itemElement.setAttribute("tooltip", item.name_original);
+					itemElement.setAttribute("pos", "top");
+
+					var categoryIcon = document.createElement("i");
+					categoryIcon.classList.add("material-icons");
+					categoryIcon.appendChild(document.createTextNode("category"));
+
+					var itemImage = document.createElement("img");
+					itemImage.setAttribute("src", item.image);
+					itemImage.setAttribute("height", "65");
+					itemImage.setAttribute("width", "65");
+
+					var priceNode = document.createElement("div");
+					priceNode.classList.add("price");
+					priceNode.appendChild(document.createTextNode(`${price.value} ${currency_name}`));
+
+					itemElement.appendChild(itemImage);
+					itemElement.appendChild(priceNode);
+					itemElement.setAttribute("style", `order: -${Math.floor(orderPrice)}`);
+					user.children[1].appendChild(itemElement);
 				}
 				if (items > 0) {
 					function sendData() {
-						userToSend += `</div></div>`
-						document.getElementById("container").innerHTML += userToSend;
+						document.getElementById("userlist").appendChild(user);
 					}
-					if (config.maxkeys != -1 && config.maxref != -1) {
-						if (config.maxkeys > inventoryKeys) {
+					if (settings.maxKeys != -1 && settings.maxRef != -1) {
+						if (settings.maxKeys > inventoryKeys) {
 							sendData();
-						} else if (config.maxkeys == inventoryKeys && config.maxref >= scrapToRef(inventoryScrap)) {
-							sendData();
-						}
-					} else if (config.maxkeys != -1) {
-						if (config.maxkeys >= inventoryKeys) {
+						} else if (settings.maxKeys == inventoryKeys && settings.maxRef >= scrapToRef(inventoryScrap)) {
 							sendData();
 						}
-					} else if (config.maxref != -1) {
-						if (config.maxref >= scrapToRef(inventoryScrap)) {
+					} else if (settings.maxKeys != -1) {
+						if (settings.maxKeys >= inventoryKeys) {
+							sendData();
+						}
+					} else if (settings.maxRef != -1) {
+						if (settings.maxRef >= scrapToRef(inventoryScrap)) {
 							sendData();
 						}
 					} else {
@@ -411,10 +457,11 @@ async function startScan(ids) {
 					}
 				}
 			}
+			nextScan(++i);
+		} else {
+			nextScan(++i);
 		}
 	}
-	stopTimer();
-	isScanning = false;
 }
 
 function scrapToRef(scrapNumber) {
