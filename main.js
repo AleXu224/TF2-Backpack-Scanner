@@ -226,6 +226,7 @@ function scan() {
 		ids.push(newID);
 	}
 	var ids = ids.concat(ids1);
+	document.getElementById("userScan").value = '';
 	startScan(ids, settings)
 }
 
@@ -258,6 +259,7 @@ async function userBuilder(userObject, n) {
 	avatarCircle.classList.add("profile");
 	avatarCircle.setAttribute("tooltip", userObject.personaname);
 	avatarCircle.setAttribute("pos", "right");
+	avatarCircle.setAttribute("onclick", `openLink('https://steamcommunity.com/profiles/${userObject.steamid}')`)
 	avatarCircle.appendChild(accountImage);
 
 	addButton.classList.add("action");
@@ -302,12 +304,16 @@ async function userBuilder(userObject, n) {
 async function stopScan() {
 	stop = true;
 	document.getElementById("stop").classList.add("hidden");
+	document.getElementById("stop2").classList.add("hidden");
 	document.getElementById("start").classList.remove("hidden");
+	document.getElementById("start2").classList.remove("hidden");
 }
 
 async function startScan(ids, settings) {
 	document.getElementById("start").classList.add("hidden");
+	document.getElementById("start2").classList.add("hidden");
 	document.getElementById("stop").classList.remove("hidden");
+	document.getElementById("stop2").classList.remove("hidden");
 	stop = false;
 	var id_string = "";
 	var usersToScan = ids.length;

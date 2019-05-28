@@ -102,6 +102,7 @@ body {
 		text-align: center;
 		-webkit-app-region: drag;
 		color: rgba(255, 255, 255, 0.8);
+		user-select: none;
 	}
 
 	#buttons {
@@ -217,6 +218,8 @@ body {
 	.options {
 		height: 100%;
 		width: 60px;
+		display: flex;
+		flex-direction: column;
 
 		.option {
 			height: 40px;
@@ -252,14 +255,15 @@ body {
 		border: none;
 		background: rgba(255, 255, 255, 0.1);
 		width: ~"calc(100% - 80px)";
-		height: 30px;
+		// height: 30px;
+		height: 300px;
 		margin: 0;
 		padding: 10px;
 		border-top-left-radius: 5px;
 		outline: none;
 		resize: none;
-		font-size: 20px;
-		line-height: 30px;
+		font-size: 15px;
+		line-height: 16px;
 		font-family: Roboto;
 		font-weight: 400;
 		transition: all 0.2s ease;
@@ -267,16 +271,16 @@ body {
 		z-index: 1001;
 
 		&:hover {
-			background: rgba(255, 255, 255, 0.2);
+			background: @primary-lighter;
 			color: rgba(255, 255, 255, 0.8);
 		}
 
 		&:focus {
-			height: 400px;
-			max-height: 400px;
+			// height: 400px;
+			// max-height: 400px;
 			background: @primary-lighter;
 			color: rgba(255, 255, 255, 0.8);
-			line-height: 25px;
+			// line-height: 25px;
 
 			&::placeholder {
 				color: rgba(255, 255, 255, 0.6) !important;
@@ -297,7 +301,7 @@ body {
 			font-size: 15px;
 			color: rgba(255, 255, 255, 0.5);
 			user-select: none;
-			cusor: help;
+			cursor: help;
 		}
 
 	}
@@ -584,6 +588,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	margin-bottom: 5px;
+	user-select: none;
 
 	.actions {
 		height: 75px;
@@ -599,6 +604,7 @@ body {
 			border-radius: 50%;
 			display: flex;
 			flex-direction: row;
+			cursor:pointer;
 
 			.material-icons {
 				width: 55px;
@@ -661,7 +667,7 @@ body {
 			border-radius: 10px;
 			margin: 5px;
 			position: relative;
-			cursor: pointer;
+			cursor: default;
 
 			i {
 				line-height: 65px;
@@ -670,7 +676,7 @@ body {
 				color: @primary;
 				text-align: center;
 				user-select: none;
-				cursor: pointer;
+				cursor: default;
 			}
 
 			.price {
@@ -685,7 +691,7 @@ body {
 				border-radius: 0px 0px 10px 10px;
 				text-align: center;
 				user-select: none;
-				cursor: pointer;
+				cursor: default;
 			}
 		}
 	}

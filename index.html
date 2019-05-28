@@ -33,6 +33,12 @@
 				<div class="option" onclick="closeWindow('scaninfo')" tooltip="Back" pos="right">
 					<i class="material-icons">arrow_back</i>
 				</div>
+				<div class="option" id="start2" tooltip="Start scan" pos="right" onclick="scan();closeWindow('scaninfo')">
+					<i class="material-icons">play_arrow</i>
+				</div>
+				<div class="option hidden" id="stop2" tooltip="Stop scan" pos="right" onclick="stopScan()">
+					<i class="material-icons">stop</i>
+				</div>
 			</div>
 			<div class="spacer"></div>
 			<textarea id="userScan" placeholder="User List"></textarea>
