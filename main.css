@@ -160,6 +160,7 @@ body {
   border-top-left-radius: 10px;
   overflow-y: auto;
   overflow-x: hidden;
+  transform: translate3d(0, 0, 0);
 }
 #scaninfo,
 #settings,
@@ -536,6 +537,16 @@ body {
   height: 55px;
   width: 55px;
   border-radius: 50%;
+}
+.user .actions .hours {
+  height: 30px;
+  padding: 0px 10px;
+  font-size: 15px;
+  line-height: 30px;
+  margin: calc(45px / 2) 5px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
 }
 .user .actions .action {
   height: 40px;

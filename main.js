@@ -17,6 +17,14 @@ require('fs').readFile("./config.json", "utf8", async function (err, data) {
 		config = JSON.parse(data);
 		document.getElementById("apikey").value = config.apikey;
 		document.getElementById("bptfkey").value = config.bptfkey;
+
+		if (config.maxRef !== undefined) {
+			document.getElementById("maxRef").value = config.maxRef;
+			document.getElementById("maxKeys").value = config.maxKeys;
+			document.getElementById("minRef").value = config.minRef;
+			document.getElementById("minKeys").value = config.minKeys;
+		}
+
 		var ts = Math.floor(new Date() / 1000);
 		if (config.ts == undefined || config.ts + 60 * 60 * 24 * 7 < ts) {
 			schemaRefresh();
@@ -187,6 +195,17 @@ function scan() {
 	var minRef = document.getElementById("minRef").value;
 	var minKeys = document.getElementById("minKeys").value;
 
+	config.maxRef = maxRef;
+	config.maxKeys = maxKeys;
+	config.minRef = minRef;
+	config.minKeys = minKeys;
+
+	require('fs').writeFile('./config.json', JSON.stringify(config), (err) => {
+		if (err) {
+			console.log(err);
+		}
+	});
+
 	if (maxRef == "") {
 		maxRef = -1;
 	}
@@ -253,6 +272,7 @@ async function userBuilder(userObject, n) {
 	spacer.classList.add("spacer");
 
 	var avatarCircle = document.createElement("div");
+	var hoursDisplay = document.createElement("div");
 	var addButton = document.createElement("div");
 	var profileButton = document.createElement("div");
 	var removeButton = document.createElement("div");
@@ -262,19 +282,32 @@ async function userBuilder(userObject, n) {
 	avatarCircle.setAttribute("onclick", `openLink('https://steamcommunity.com/profiles/${userObject.steamid}')`)
 	avatarCircle.appendChild(accountImage);
 
+	hoursDisplay.classList.add("hours");
 	addButton.classList.add("action");
 	profileButton.classList.add("action");
 	removeButton.classList.add("action");
 
+	hoursDisplay.setAttribute("tooltip", "Hours played");
 	addButton.setAttribute("tooltip", "Add friend");
 	addButton.setAttribute("onclick", `openLink('steam://friends/add/${userObject.steamid}')`);
 	profileButton.setAttribute("tooltip", "Backpack.tf page");
 	profileButton.setAttribute("onclick", `openLink('https://backpack.tf/profiles/${userObject.steamid}')`);
 	removeButton.setAttribute("tooltip", "Remove listing");
 	removeButton.setAttribute("onclick", `removeUser(${n})`);
+	hoursDisplay.setAttribute("pos", "bottom");
 	addButton.setAttribute("pos", "bottom");
 	profileButton.setAttribute("pos", "bottom");
 	removeButton.setAttribute("pos", "left");
+
+	if (userObject.hours !== undefined) {
+		if (userObject.hours != 0) {
+			hoursDisplay.appendChild(document.createTextNode(userObject.hours));
+		} else {
+			hoursDisplay.appendChild(document.createTextNode("Private"));
+		}
+	} else {
+		hoursDisplay.appendChild(document.createTextNode("Private"));
+	}
 
 	addButton.appendChild(addIcon);
 	profileButton.appendChild(accountIcon);
@@ -285,18 +318,19 @@ async function userBuilder(userObject, n) {
 	actions.appendChild(avatarCircle);
 	actions.appendChild(addButton);
 	actions.appendChild(profileButton);
+	actions.appendChild(hoursDisplay);
 	actions.appendChild(spacer);
 	actions.appendChild(removeButton);
 
-	var itemContainer = document.createElement("div");
-	itemContainer.classList.add("items");
+	// var itemContainer = document.createElement("div");
+	// itemContainer.classList.add("items");
 
 	var user = document.createElement("div");
 	user.classList.add("user");
 	user.id = n;
 
 	user.appendChild(actions);
-	user.appendChild(itemContainer);
+	// user.appendChild(itemContainer);
 
 	return user;
 }
@@ -361,10 +395,12 @@ async function startScan(ids, settings) {
 					var inventory = await getUserInventory(userObject.steamid);
 				}
 				var n = Math.floor((Math.random() * (1000000000000 - 1)) + 1);
-				var user = await userBuilder(userObject, n);
+				// var user = await userBuilder(userObject, n);
 				inventoryScrap = 0;
 				inventoryKeys = 0;
 				items = 0;
+				var itemContainer = document.createElement("div");
+				itemContainer.classList.add("items");
 				for (var z in inventory) {
 					var item = inventory[z];
 					if (item.name == "Refined Metal") {
@@ -438,10 +474,26 @@ async function startScan(ids, settings) {
 					itemElement.appendChild(itemImage);
 					itemElement.appendChild(priceNode);
 					itemElement.setAttribute("style", `order: -${Math.floor(orderPrice)}`);
-					user.children[1].appendChild(itemElement);
+					// user.children[1].appendChild(itemElement);
+					itemContainer.appendChild(itemElement);
 				}
 				if (items > 0) {
-					function sendData() {
+					async function sendData() {
+						var games_page = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${config.apikey}&steamid=${userObject.steamid}&format=json&include_played_free_games=1`);
+						var games = await games_page.json();
+
+						var game_list = games.response.games;
+						if (game_list != undefined) {
+							for (var game of game_list) {
+								if (game.appid == 440) {
+									userObject.hours = Math.round(game.playtime_forever / 60);
+								}
+							}
+						}
+
+						var user = await userBuilder(userObject, n);
+						user.appendChild(itemContainer);
+
 						document.getElementById("userlist").appendChild(user);
 					}
 					if (settings.maxKeys != -1 && settings.maxRef != -1) {
