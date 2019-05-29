@@ -478,7 +478,7 @@ async function startScan(ids, settings) {
 					itemContainer.appendChild(itemElement);
 				}
 				if (items > 0) {
-					async function sendData() {
+					async function sendData(userObject) {
 						var games_page = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${config.apikey}&steamid=${userObject.steamid}&format=json&include_played_free_games=1`);
 						var games = await games_page.json();
 
@@ -498,20 +498,20 @@ async function startScan(ids, settings) {
 					}
 					if (settings.maxKeys != -1 && settings.maxRef != -1) {
 						if (settings.maxKeys > inventoryKeys) {
-							sendData();
+							sendData(userObject);
 						} else if (settings.maxKeys == inventoryKeys && settings.maxRef >= scrapToRef(inventoryScrap)) {
-							sendData();
+							sendData(userObject);
 						}
 					} else if (settings.maxKeys != -1) {
 						if (settings.maxKeys >= inventoryKeys) {
-							sendData();
+							sendData(userObject);
 						}
 					} else if (settings.maxRef != -1) {
 						if (settings.maxRef >= scrapToRef(inventoryScrap)) {
-							sendData();
+							sendData(userObject);
 						}
 					} else {
-						sendData();
+						sendData(userObject);
 					}
 				}
 			}
