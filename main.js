@@ -4,9 +4,6 @@ var {
 } = require('electron');
 var await = require('await');
 var fetch = require('node-fetch');
-var vdf = require('node-vdf');
-var request = require('request');
-var $ = require('jquery');
 var SteamID = require('steamid');
 
 require('fs').readFile("./config.json", "utf8", async function (err, data) {
@@ -89,11 +86,6 @@ async function schemaRefresh() {
 }
 
 const shell = require('electron').shell;
-
-$(document).on('click', 'a[href^="http"]', function (event) {
-	event.preventDefault();
-	shell.openExternal(this.href);
-});
 
 async function openLink(link) {
 	shell.openExternal(link);
