@@ -1,4 +1,7 @@
-var {app, BrowserWindow} = require('electron');
+var { app, BrowserWindow } = require('electron');
+const debug = require('electron-debug');
+
+debug({showDevTools:false});
 
 app.on("ready", () => {
 	var win = new BrowserWindow({minWidth:800,minHeight:600,frame:false})

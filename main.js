@@ -16,8 +16,6 @@ require('fs').readFile("./config.json", "utf8", async function (err, data) {
 	} else {
 		config = JSON.parse(data);
 		document.getElementById("apikey").value = config.apikey;
-		document.getElementById("bptfkey").value = config.bptfkey;
-
 		if (config.maxRef !== undefined) {
 			document.getElementById("maxRef").value = config.maxRef;
 			document.getElementById("maxKeys").value = config.maxKeys;
@@ -71,7 +69,7 @@ async function schemaRefresh() {
 		}
 	})
 	progress.innerText = "Downloading the backpack.tf prices";
-	var bptf_schema_page = await fetch(`https://backpack.tf/api/IGetPrices/v4?key=${config.bptfkey}`);
+	var bptf_schema_page = await fetch(`https://raw.githubusercontent.com/AleXu224/bptf_pricelist/master/schema_bptf.json`);
 	bptf_schema = await bptf_schema_page.json();
 	keyprice = bptf_schema.response.items["Mann Co. Supply Crate Key"].prices[6].Tradable.Craftable[0].value;
 	require('fs').writeFile('./schema_bptf.json', JSON.stringify(bptf_schema), (err) => {
@@ -145,26 +143,21 @@ function timeout(ms) {
 
 function saveSettings() {
 	var apikey = document.getElementById("apikey").value;
-	var bptfkey = document.getElementById("bptfkey").value;
 	if (apikey.length != 32) {
 		alert(`The Steam api key key is invalid`);
-	} else if (bptfkey.length != 24) {
-		alert(`The Backpack.tf api key is invalid`);
 	} else {
 		try {
 			if (config != undefined) {
 				var restartAfter = false;
 				config = {
 					"apikey": apikey,
-					"bptfkey": bptfkey,
 					ts: config.ts
 				}
 			}
 		} catch (error) {
 			var restartAfter = true;
 			config = {
-				"apikey": apikey,
-				"bptfkey": bptfkey
+				"apikey": apikey
 			}
 		}
 		require('fs').writeFile('./config.json', JSON.stringify(config), (err) => {
