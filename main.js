@@ -401,8 +401,29 @@ async function startScan(ids, settings) {
 						inventoryKeys++;
 						continue;
 					}
+					var serial = undefined;
+					if (item.australium == 1){
+						console.log();
+					}
 					try {
-						var price = bptf_schema.response.items[item.name].prices[item.quality].Tradable[item.craftable == 1 ? "Craftable" : "Non-Craftable"][item.effect != undefined ? effect : 0];
+						if (item.quality == 5) { 
+							if (item.effect != undefined) {
+								serial = item.effect;
+							} else {
+								serial = 0;
+							}
+						} else {
+							if (item.crate != undefined) {
+								if (bptf_schema.response.items[item.australium == 1 ? "Australium " + item.name : item.name].prices[item.quality].Tradable[item.craftable == 1 ? "Craftable" : "Non-Craftable"][0] == undefined) {
+									serial = item.crate;
+								} else {
+									serial = 0;
+								}
+							} else {
+								serial = 0;
+							}
+						}
+						var price = bptf_schema.response.items[item.australium == 1 ? "Australium " + item.name : item.name].prices[item.quality].Tradable[item.craftable == 1 ? "Craftable" : "Non-Craftable"][serial];
 						if (price == undefined) {
 							continue;
 						}
@@ -452,10 +473,18 @@ async function startScan(ids, settings) {
 					itemImage.setAttribute("height", "65");
 					itemImage.setAttribute("width", "65");
 
+					var effectImage = document.createElement("img");
+					effectImage.setAttribute("src", item.effect_image);
+					effectImage.setAttribute("height", "65");
+					effectImage.setAttribute("width", "65");
+
 					var priceNode = document.createElement("div");
 					priceNode.classList.add("price");
 					priceNode.appendChild(document.createTextNode(`${price.value} ${currency_name}`));
 
+					if (item.quality == 5) {
+						itemElement.appendChild(effectImage);
+					}
 					itemElement.appendChild(itemImage);
 					itemElement.appendChild(priceNode);
 					itemElement.setAttribute("style", `order: -${Math.floor(orderPrice)}`);
@@ -551,6 +580,11 @@ async function getUserInventory(steamid) {
 			} else if (attribute == 134) {
 				var effect_image = `https://backpack.tf/images/440/particles/${item.attributes[j].float_value}_94x94.png`;
 				var effect = item.attributes[j].float_value;
+			} else if (attribute == 2041) {
+				var effect_image = `https://backpack.tf/images/440/particles/${item.attributes[j].value}_94x94.png`;
+				var effect = item.attributes[j].value;
+			} else if (attribute == 187) {
+				var crate = item.attributes[j].float_value;
 			}
 		}
 		if (australium == undefined) {
@@ -593,7 +627,8 @@ async function getUserInventory(steamid) {
 				australium,
 				image,
 				effect,
-				effect_image
+				effect_image,
+				crate
 			})
 		}
 	}

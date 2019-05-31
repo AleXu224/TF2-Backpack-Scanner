@@ -599,6 +599,9 @@ body {
   user-select: none;
   cursor: default;
 }
+.user .items .item img {
+  position: absolute;
+}
 .user .items .item .price {
   height: 20px;
   width: 100%;
