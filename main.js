@@ -402,9 +402,6 @@ async function startScan(ids, settings) {
 						continue;
 					}
 					var serial = undefined;
-					if (item.australium == 1){
-						console.log();
-					}
 					try {
 						if (item.quality == 5) { 
 							if (item.effect != undefined) {
