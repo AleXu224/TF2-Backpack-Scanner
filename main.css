@@ -253,12 +253,12 @@ body {
 #scaninfo .settings,
 #settings .settings,
 #splash .settings {
-  height: calc(100% - 20px);
-  padding: 10px;
+  height: calc(100% - 320px - 10px);
+  padding: 10px 10px 0px 10px;
   width: 100%;
   max-width: 600px;
-  align-self: center;
   position: relative;
+  overflow-y: auto;
 }
 #scaninfo .settings .note,
 #settings .settings .note,
@@ -296,9 +296,9 @@ body {
 }
 .checkbox {
   height: 30px;
-  width: 45px;
+  width: 35px;
   position: relative;
-  margin: 0px 7.5px;
+  margin: 0px 12.5px;
 }
 .checkbox input {
   height: 30px;
@@ -311,13 +311,13 @@ body {
   background: #4E4ECC;
 }
 .checkbox input:checked + div div {
-  left: 30px;
+  left: 20px;
   background: #5D5DF2;
-  box-shadow: 0px 0px 0px 5px #5D5DF2;
+  box-shadow: 0px 0px 0px 3px #5D5DF2;
 }
 .checkbox div {
   margin-top: 7.5px;
-  width: 45px;
+  width: 35px;
   height: 15px;
   border-radius: 22.5px;
   background: #202124;
@@ -332,7 +332,7 @@ body {
   width: 15px;
   border-radius: 50%;
   background-color: #57585C;
-  box-shadow: 0px 0px 0px 5px #57585C;
+  box-shadow: 0px 0px 0px 3px #57585C;
 }
 .valueInput {
   width: 100%;
@@ -675,14 +675,14 @@ body {
   user-select: none;
   cursor: default;
 }
-#userlist::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 5px;
   background: #202124;
 }
-#userlist::-webkit-scrollbar-button {
+*::-webkit-scrollbar-button {
   display: none;
 }
-#userlist::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background: #5D5DF2;
   border-radius: 2.5px;
 }

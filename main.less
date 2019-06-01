@@ -290,12 +290,13 @@ body {
 	}
 
 	.settings {
-		height: ~"calc(100% - 20px)";
-		padding: 10px;
+		height: ~"calc(100% - 320px - 10px)";
+		padding: 10px 10px 0px 10px;
 		width: 100%;
 		max-width: 600px;
-		align-self: center;
+		// align-self: center;
 		position: relative;
+		overflow-y: auto;
 
 		.note {
 			line-height: 15px;
@@ -334,9 +335,9 @@ body {
 
 .checkbox {
 	height: 30px;
-	width: 45px;
+	width: 35px;
 	position: relative;
-	margin: 0px 7.5px;
+	margin: 0px 12.5px;
 
 	input {
 		height: 30px;
@@ -350,15 +351,15 @@ body {
 		background: @secondary-dark;
 
 		div {
-			left: 30px;
+			left: 20px;
 			background: @secondary;
-			box-shadow: 0px 0px 0px 5px @secondary;
+			box-shadow: 0px 0px 0px 3px @secondary;
 		}
 	}
 
 	div {
 		margin-top: 7.5px;
-		width: 45px;
+		width: 35px;
 		height: 15px;
 		border-radius: 22.5px;
 		background: @primary;
@@ -373,7 +374,7 @@ body {
 			width: 15px;
 			border-radius: 50%;
 			background-color: @primary-lighter;
-			box-shadow: 0px 0px 0px 5px @primary-lighter;
+			box-shadow: 0px 0px 0px 3px @primary-lighter;
 		}
 	}
 }
@@ -781,16 +782,16 @@ body {
 
 }
 
-#userlist::-webkit-scrollbar {
+*::-webkit-scrollbar {
 	width: 5px;
 	background: @primary
 }
 
-#userlist::-webkit-scrollbar-button {
+*::-webkit-scrollbar-button {
 	display: none;
 }
 
-#userlist::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
 	background: @secondary;
 	border-radius: 2.5px;
 }
