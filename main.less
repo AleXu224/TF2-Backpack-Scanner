@@ -200,7 +200,7 @@ body {
 		border-top-left-radius: 10px;
 		overflow-y: auto;
 		overflow-x: hidden;
-		transform: translate3d(0,0,0);
+		transform: translate3d(0, 0, 0);
 	}
 }
 
@@ -336,8 +336,7 @@ body {
 	height: 30px;
 	width: 45px;
 	position: relative;
-	margin: 0px;
-	padding: 7.5px 0px;
+	margin: 0px 7.5px;
 
 	input {
 		height: 30px;
@@ -529,6 +528,57 @@ body {
 	}
 }
 
+[tooltipS] {
+	margin: 20px;
+	position: relative;
+
+	&[posS="right"]::before {
+		transform: translateY(-50%);
+		left: ~"calc(100% + 10px)";
+		top: 50%;
+	}
+
+	&[posS="left"]::before {
+		transform: translateY(-50%);
+		right: ~"calc(100% + 10px)";
+		top: 50%;
+	}
+
+	&[posS="top"]::before {
+		transform: translateX(-50%);
+		bottom: ~"calc(100% + 10px)";
+		left: 50%;
+	}
+
+	&[posS="bottom"]::before {
+		transform: translateX(-50%);
+		top: ~"calc(100% + 10px)";
+		left: 50%;
+	}
+
+	&::before {
+		background: rgba(0, 0, 0, 0.8);
+		padding: 5px;
+		border-radius: 5px;
+		font-size: 15px;
+		line-height: 15px;
+		content: attr(tooltipS);
+		position: absolute;
+		transform: translate(-50%, -50%);
+		visibility: hidden;
+		min-width: 60px;
+		text-align: center;
+		z-index: 9002;
+		color: rgba(255, 255, 255, 0.8);
+		white-space: nowrap;
+		pointer-events: none;
+	}
+
+	&:hover::before {
+		visibility: visible;
+	}
+}
+
 .spacer {
 	flex-grow: 1;
 }
@@ -605,7 +655,7 @@ body {
 			border-radius: 50%;
 			display: flex;
 			flex-direction: row;
-			cursor:pointer;
+			cursor: pointer;
 
 			.material-icons {
 				width: 55px;
@@ -693,6 +743,23 @@ body {
 
 			img {
 				position: absolute;
+			}
+
+			.tradable {
+				position: absolute;
+				top: 0;
+				right: 0;
+				height: 25px;
+				width: 25px;
+				background: rgba(0, 0, 0, 0.5);
+				border-bottom-left-radius: 5px;
+				i {
+					height: 25px;
+					width: 25px;
+					line-height: 25px;
+					font-size: 21px;
+					color: rgba(255, 255, 255, 0.6);
+				}
 			}
 
 			.price {

@@ -18,6 +18,7 @@ require('fs').readFile("./config.json", "utf8", async function (err, data) {
 			document.getElementById("maxKeys").value = config.maxKeys;
 			document.getElementById("minRef").value = config.minRef;
 			document.getElementById("minKeys").value = config.minKeys;
+			document.getElementById("untradable").checked = config.untradable;
 		}
 
 		var ts = Math.floor(new Date() / 1000);
@@ -179,11 +180,13 @@ function scan() {
 	var maxKeys = document.getElementById("maxKeys").value;
 	var minRef = document.getElementById("minRef").value;
 	var minKeys = document.getElementById("minKeys").value;
+	var untradable = document.getElementById("untradable").checked;
 
 	config.maxRef = maxRef;
 	config.maxKeys = maxKeys;
 	config.minRef = minRef;
 	config.minKeys = minKeys;
+	config.untradable = untradable;
 
 	require('fs').writeFile('./config.json', JSON.stringify(config), (err) => {
 		if (err) {
@@ -217,7 +220,8 @@ function scan() {
 		maxRef,
 		maxKeys,
 		minRef,
-		minKeys
+		minKeys,
+		untradable
 	}
 
 	var input = document.getElementById("userScan").value;
@@ -373,7 +377,7 @@ async function startScan(ids, settings) {
 				if (userObject.communityvisibilitystate != 3) {
 					continue;
 				}
-				var inventory = await getUserInventory(userObject.steamid);
+				var inventory = await getUserInventory(userObject.steamid, settings);
 				if (inventory == "private") {
 					continue;
 				} else if (inventory == "timeout") {
@@ -403,7 +407,7 @@ async function startScan(ids, settings) {
 					}
 					var serial = undefined;
 					try {
-						if (item.quality == 5) { 
+						if (item.quality == 5) {
 							if (item.effect != undefined) {
 								serial = item.effect;
 							} else {
@@ -460,6 +464,11 @@ async function startScan(ids, settings) {
 					itemElement.classList.add(item.quality_name);
 					itemElement.setAttribute("tooltip", item.name_original);
 					itemElement.setAttribute("pos", "top");
+					if (item.available != undefined) {
+						var ts = Math.floor(new Date() / 1000);
+						itemElement.setAttribute("tooltipS", `Tradable in ${Math.floor((item.available - ts) / (24 * 60 * 60))} days`);
+						itemElement.setAttribute("posS", "bottom");
+					}
 
 					var categoryIcon = document.createElement("i");
 					categoryIcon.classList.add("material-icons");
@@ -469,6 +478,14 @@ async function startScan(ids, settings) {
 					itemImage.setAttribute("src", item.image);
 					itemImage.setAttribute("height", "65");
 					itemImage.setAttribute("width", "65");
+
+					var timeIcon = document.createElement("i");
+					timeIcon.classList.add("material-icons");
+					timeIcon.appendChild(document.createTextNode("access_time"));
+
+					var untradableMark = document.createElement("div");
+					untradableMark.classList.add("tradable");
+					untradableMark.appendChild(timeIcon);
 
 					var effectImage = document.createElement("img");
 					effectImage.setAttribute("src", item.effect_image);
@@ -483,6 +500,9 @@ async function startScan(ids, settings) {
 						itemElement.appendChild(effectImage);
 					}
 					itemElement.appendChild(itemImage);
+					if (item.available != undefined) {
+						itemElement.appendChild(untradableMark);
+					}
 					itemElement.appendChild(priceNode);
 					itemElement.setAttribute("style", `order: -${Math.floor(orderPrice)}`);
 					// user.children[1].appendChild(itemElement);
@@ -538,7 +558,7 @@ function scrapToRef(scrapNumber) {
 	return refNumber;
 }
 
-async function getUserInventory(steamid) {
+async function getUserInventory(steamid, settings) {
 	var inventory_page = await fetch(`http://api.steampowered.com/ieconitems_440/getplayeritems/v0001/?key=${config.apikey}&steamid=${steamid}`);
 	var inventory = await inventory_page.json();
 	if (inventory.result == undefined) {
@@ -557,9 +577,11 @@ async function getUserInventory(steamid) {
 		craftable = undefined;
 		name = undefined;
 		name_original = undefined;
+		tradable = true;
+		available = undefined;
 		var item = inventory.result.items[i];
 		if (item.flag_cannot_trade != undefined) {
-			continue;
+			tradable = false;
 		}
 		if (item.flag_cannot_craft != undefined) {
 			craftable = -1;
@@ -570,19 +592,31 @@ async function getUserInventory(steamid) {
 		var quality_name = qualities[quality].name;
 		for (var j in item.attributes) {
 			var attribute = item.attributes[j].defindex;
+			var attrib = item.attributes[j];
 			if (attribute == 2027) {
 				var australium = 1
 			} else if (attribute == 2025) {
-				var killstreak = item.attributes[j].float_value;
+				var killstreak = attrib.float_value;
 			} else if (attribute == 134) {
 				var effect_image = `https://backpack.tf/images/440/particles/${item.attributes[j].float_value}_94x94.png`;
-				var effect = item.attributes[j].float_value;
+				var effect = attrib.float_value;
 			} else if (attribute == 2041) {
 				var effect_image = `https://backpack.tf/images/440/particles/${item.attributes[j].value}_94x94.png`;
-				var effect = item.attributes[j].value;
+				var effect = attrib.value;
 			} else if (attribute == 187) {
-				var crate = item.attributes[j].float_value;
+				var crate = attrib.float_value;
+			} else if (attribute == 211) {
+				var ts = Math.floor(new Date() / 1000);
+				if (ts < attrib.value) {
+					if (settings.untradable === true) {
+						tradable = true;
+						available = attrib.value;
+					}
+				}
 			}
+		}
+		if (tradable === false) {
+			continue;
 		}
 		if (australium == undefined) {
 			var australium = -1;
@@ -625,7 +659,9 @@ async function getUserInventory(steamid) {
 				image,
 				effect,
 				effect_image,
-				crate
+				crate,
+				tradable,
+				available
 			})
 		}
 	}
