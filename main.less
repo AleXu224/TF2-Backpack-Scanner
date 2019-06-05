@@ -201,6 +201,21 @@ body {
 		overflow-y: auto;
 		overflow-x: hidden;
 		transform: translate3d(0, 0, 0);
+		#status {
+			position: sticky;
+			top: 0;
+			left: 0;
+			height: 20px;
+			background: @primary;
+			font-size: 15px;
+			line-height: 20px;
+			padding: 0px 10px;
+			color: rgba(255, 255, 255, 0.6);
+			user-select: none;
+			cursor: default;
+			pointer-events: none;
+			z-index: 1;
+		}
 	}
 }
 
@@ -257,7 +272,7 @@ body {
 		background: rgba(255, 255, 255, 0.1);
 		width: ~"calc(100% - 80px)";
 		// height: 30px;
-		height: 300px;
+		height: 200px;
 		margin: 0;
 		padding: 10px;
 		border-top-left-radius: 5px;
@@ -290,7 +305,7 @@ body {
 	}
 
 	.settings {
-		height: ~"calc(100% - 320px - 10px)";
+		height: ~"calc(100% - 220px - 10px)";
 		padding: 10px 10px 0px 10px;
 		width: 100%;
 		max-width: 600px;
@@ -631,6 +646,55 @@ body {
 
 	&.Decorated {
 		background-color: #FAFAFA;
+		background-color: @primary-light;
+	}
+
+	&.Normal2 {
+		box-shadow: 0px 5px 0px 0px #B2B2B2 inset;
+	}
+
+	&.Genuine2 {
+		box-shadow: 0px 5px 0px 0px #4D7455 inset;
+	}
+
+	&.Vintage2 {
+		box-shadow: 0px 5px 0px 0px #476291 inset;
+	}
+
+	&.Unusual2 {
+		box-shadow: 0px 5px 0px 0px #8650AC inset;
+	}
+
+	&.Unique2 {
+		box-shadow: 0px 5px 0px 0px #FFD700 inset;
+	}
+
+	&.Community2 {
+		box-shadow: 0px 5px 0px 0px #70B04A inset;
+	}
+
+	&.Valve2 {
+		box-shadow: 0px 5px 0px 0px #A50F79 inset;
+	}
+
+	&.Self-Made2 {
+		box-shadow: 0px 5px 0px 0px #70B04A inset;
+	}
+
+	&.Strange2 {
+		box-shadow: 0px 5px 0px 0px #CF6A32 inset;
+	}
+
+	&.Haunted2 {
+		box-shadow: 0px 5px 0px 0px #38F3AB inset;
+	}
+
+	&.Collector2 {
+		box-shadow: 0px 5px 0px 0px #AA0000 inset;
+	}
+
+	&.Decorated2 {
+		box-shadow: 0px 5px 0px 0px #FAFAFA inset;
 	}
 }
 
@@ -717,6 +781,11 @@ body {
 		}
 	}
 
+	.divider {
+		width: 100%;
+		height: 20px;
+	}
+
 	.items {
 		min-height: 75px;
 		width: 100%;
@@ -754,6 +823,7 @@ body {
 				width: 25px;
 				background: rgba(0, 0, 0, 0.5);
 				border-bottom-left-radius: 5px;
+
 				i {
 					height: 25px;
 					width: 25px;
