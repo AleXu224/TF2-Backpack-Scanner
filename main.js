@@ -472,7 +472,9 @@ async function startScan(ids, settings) {
 					} else {
 						var serial = undefined;
 						if (item.quality == 5 || item.quality2 == 5) {
-							if (item.effect != undefined) {
+							if (item.target != undefined) {
+								serial = item.target;
+							} else if (item.effect != undefined) {
 								serial = item.effect;
 							} else {
 								serial = 0;
@@ -681,6 +683,8 @@ async function getUserInventory(steamid, settings) {
 		quality_name = undefined;
 		quality2 = undefined;
 		quality2_name = undefined;
+		target = undefined;
+		target_name = undefined;
 		var item = inventory.result.items[i];
 		if (item.flag_cannot_trade != undefined) {
 			tradable = false;
@@ -721,6 +725,8 @@ async function getUserInventory(steamid, settings) {
 				if (skin_wear < 1) skin_wear = 1;
 			} else if (attribute == 214) {
 				quality2 = 11;
+			} else if (attribute == 2012) {
+				target = attrib.float_value;
 			}
 		}
 		if (quality == quality2) {
@@ -745,7 +751,19 @@ async function getUserInventory(steamid, settings) {
 				break;
 			}
 		}
-		var name_original = name;
+		var name_original;
+		if (target != undefined) {
+			for (var l in schema) {
+				var schem = schema[l];
+				if (schem.defindex == target) {
+					target_name = schem.item_name;
+					break;
+				}
+			}
+			name_original = target_name + " Unusualifier";
+		} else {
+			name_original = name;
+		}
 		if (skin_id != undefined) {
 			name_original = `${skin_list[skin_id]} ${name_original}`;
 			image = `https://scrap.tf/img/items/warpaint/${name}_${skin_id}_${skin_wear}_0.png`;
@@ -789,7 +807,8 @@ async function getUserInventory(steamid, settings) {
 				skin_id,
 				skin_wear,
 				quality2,
-				quality2_name
+				quality2_name,
+				target
 			})
 		}
 	}
