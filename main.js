@@ -630,17 +630,17 @@ async function startScan(ids, settings) {
 						document.getElementById("userlist").appendChild(user);
 					}
 					if (settings.maxKeys != -1 && settings.maxRef != -1) {
-						if (settings.maxKeys > inventoryKeys) {
+						if (settings.maxKeys > userObject.inventoryKeys) {
 							sendData(userObject, itemContainer, skinContainer);
-						} else if (settings.maxKeys == inventoryKeys && settings.maxRef >= scrapToRef(inventoryScrap)) {
+						} else if (settings.maxKeys == userObject.inventoryKeys && settings.maxRef >= scrapToRef(userObject.inventoryScrap)) {
 							sendData(userObject, itemContainer, skinContainer);
 						}
 					} else if (settings.maxKeys != -1) {
-						if (settings.maxKeys >= inventoryKeys) {
+						if (settings.maxKeys >= userObject.inventoryKeys) {
 							sendData(userObject, itemContainer, skinContainer);
 						}
 					} else if (settings.maxRef != -1) {
-						if (settings.maxRef >= scrapToRef(inventoryScrap)) {
+						if (settings.maxRef >= scrapToRef(userObject.inventoryScrap)) {
 							sendData(userObject, itemContainer, skinContainer);
 						}
 					} else {
