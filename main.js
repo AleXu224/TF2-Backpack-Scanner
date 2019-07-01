@@ -281,6 +281,8 @@ async function userBuilder(userObject, n) {
 
 	var avatarCircle = document.createElement("div");
 	var hoursDisplay = document.createElement("div");
+	var keyDisplay = document.createElement("div");
+	var refDisplay = document.createElement("div");
 	var addButton = document.createElement("div");
 	var profileButton = document.createElement("div");
 	var removeButton = document.createElement("div");
@@ -291,11 +293,15 @@ async function userBuilder(userObject, n) {
 	avatarCircle.appendChild(accountImage);
 
 	hoursDisplay.classList.add("hours");
+	keyDisplay.classList.add("hours");
+	refDisplay.classList.add("hours");
 	addButton.classList.add("action");
 	profileButton.classList.add("action");
 	removeButton.classList.add("action");
 
 	hoursDisplay.setAttribute("tooltip", "Hours played");
+	keyDisplay.setAttribute("tooltip", "Tradable keys in inventory");
+	refDisplay.setAttribute("tooltip", "Tradable refined in inventory");
 	addButton.setAttribute("tooltip", "Add friend");
 	addButton.setAttribute("onclick", `openLink('steam://friends/add/${userObject.steamid}')`);
 	profileButton.setAttribute("tooltip", "Backpack.tf page");
@@ -303,6 +309,8 @@ async function userBuilder(userObject, n) {
 	removeButton.setAttribute("tooltip", "Remove listing");
 	removeButton.setAttribute("onclick", `removeUser(${n})`);
 	hoursDisplay.setAttribute("pos", "bottom");
+	keyDisplay.setAttribute("pos", "bottom");
+	refDisplay.setAttribute("pos", "bottom");
 	addButton.setAttribute("pos", "bottom");
 	profileButton.setAttribute("pos", "bottom");
 	removeButton.setAttribute("pos", "left");
@@ -317,6 +325,9 @@ async function userBuilder(userObject, n) {
 		hoursDisplay.appendChild(document.createTextNode("Private"));
 	}
 
+	refDisplay.appendChild(document.createTextNode(scrapToRef(userObject.inventoryScrap) + " Ref"));
+	keyDisplay.appendChild(document.createTextNode(userObject.inventoryKeys + " Keys"));
+
 	addButton.appendChild(addIcon);
 	profileButton.appendChild(accountIcon);
 	removeButton.appendChild(deleteIcon);
@@ -327,6 +338,8 @@ async function userBuilder(userObject, n) {
 	actions.appendChild(addButton);
 	actions.appendChild(profileButton);
 	actions.appendChild(hoursDisplay);
+	if (userObject.inventoryKeys > 0) actions.appendChild(keyDisplay);
+	if (userObject.inventoryScrap > 0) actions.appendChild(refDisplay);
 	actions.appendChild(spacer);
 	actions.appendChild(removeButton);
 
@@ -415,8 +428,8 @@ async function startScan(ids, settings) {
 					var inventory = await getUserInventory(userObject.steamid);
 				}
 				var n = Math.floor((Math.random() * (Math.pow(10, 32) - 1)) + 1);
-				inventoryScrap = 0;
-				inventoryKeys = 0;
+				userObject.inventoryScrap = 0;
+				userObject.inventoryKeys = 0;
 				items = 0;
 				var itemContainer = document.createElement("div");
 				itemContainer.classList.add("items");
@@ -428,16 +441,16 @@ async function startScan(ids, settings) {
 
 					// Check if the item is a currency
 					if (item.name == "Refined Metal") {
-						inventoryScrap += 9;
+						userObject.inventoryScrap += 9;
 						continue;
 					} else if (item.name == "Reclaimed Metal") {
-						inventoryScrap += 3;
+						userObject.inventoryScrap += 3;
 						continue;
 					} else if (item.name == "Scrap Metal") {
-						inventoryScrap++;
+						userObject.inventoryScrap++;
 						continue;
 					} else if (item.name == "Mann Co. Supply Crate Key") {
-						inventoryKeys++;
+						userObject.inventoryKeys++;
 						continue;
 					}
 
