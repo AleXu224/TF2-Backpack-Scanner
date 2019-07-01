@@ -1,14 +1,22 @@
-![](https://i.imgur.com/LXPR5hZ.png)
 # TF2-Backpack-Scanner
-A backpack scanner made in electron
+An easy to use TF2 backpack/item scanner.
+Supports server statuses and steam ids and comes with a variety of filters to help with your trading.
 
-If you find any bugs or have a request please let me know by making an issue in the [issue](https://github.com/AleXu224/TF2-Backpack-Scanner/issues) tab
+![](https://i.imgur.com/LXPR5hZ.png)
+
+If you find any bugs or have a request please let me know by making an issue in the [Issues](https://github.com/AleXu224/TF2-Backpack-Scanner/issues) tab
 
 # Usage:
 - Download the latest version of the program from the [releases](https://github.com/AleXu224/TF2-Backpack-Scanner/releases) tab
-- Extract the archive anywhere on your pc
+- Extract the archive anywhere in your pc
 - Open **tf2-backpack-scanner.exe**
-- Set the Steam api key from the window that appears
-- Once set press the save button. This will restart the program and download the required files
-- Press the left top button and set your scan settings and user ids
-- Press scan on the main window
+- Set the Steam api key from the panel that appears
+- Get scanning
+
+# Frequently asked questions
+
+### The program asks for an api key and I don't know where to get it from
+You can get your api key from this [page](https://steamcommunity.com/dev/apikey)
+
+### Where can I report bugs or request a feature
+You can report bugs and request features in the [issues](https://github.com/AleXu224/TF2-Backpack-Scanner/issues) tab or by [adding me on Steam](http://steamcommunity.com/id/Squizell/)
