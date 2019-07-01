@@ -11,6 +11,7 @@ var win = remote.getCurrentWindow();
 const shell = require('electron').shell;
 var stop = true;
 var config = undefined;
+var keyprice;
 
 fs.readFile("./config.json", "utf8", async function (err, data) {
 	if (err) {
@@ -218,18 +219,10 @@ function scan() {
 		}
 	});
 
-	if (maxRef == "") {
-		maxRef = -1;
-	}
-	if (maxKeys == "") {
-		maxKeys = -1;
-	}
-	if (minRef == "") {
-		minRef = 0;
-	}
-	if (minKeys == "") {
-		minKeys = 0;
-	}
+	if (maxRef == "") maxRef = -1;
+	if (maxKeys == "") maxKeys = -1;
+	if (minRef == "") minRef = 0;
+	if (minKeys == "") minKeys = 0;
 
 	maxRef = parseFloat(maxRef);
 	maxKeys = parseFloat(maxKeys);
@@ -498,11 +491,9 @@ async function startScan(ids, settings) {
 
 					// Filter the price
 					if (price.currency == "keys") {
-						if (price.value < settings.minKeys + settings.minRef / keyprice) {
-							continue;
-						}
+						if (price.value < settings.minKeys + settings.minRef / keyprice) continue;
 					} else if (price.currency == "metal") {
-						if (0 < settings.minKeys) {
+						if (settings.minKeys > 0 && price.value < settings.minKeys * keyprice + settings.minRef) {
 							continue;
 						} else if (price.value < settings.minRef) {
 							continue;
