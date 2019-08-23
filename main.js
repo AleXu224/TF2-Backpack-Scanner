@@ -281,6 +281,7 @@ async function userBuilder(userObject, n) {
 
 	var avatarCircle = document.createElement("div");
 	var hoursDisplay = document.createElement("div");
+	var levelDisplay = document.createElement("div");
 	var keyDisplay = document.createElement("div");
 	var refDisplay = document.createElement("div");
 	var addButton = document.createElement("div");
@@ -293,6 +294,7 @@ async function userBuilder(userObject, n) {
 	avatarCircle.appendChild(accountImage);
 
 	hoursDisplay.classList.add("hours");
+	levelDisplay.classList.add("hours");
 	keyDisplay.classList.add("hours");
 	refDisplay.classList.add("hours");
 	addButton.classList.add("action");
@@ -300,6 +302,7 @@ async function userBuilder(userObject, n) {
 	removeButton.classList.add("action");
 
 	hoursDisplay.setAttribute("tooltip", "Hours played");
+	levelDisplay.setAttribute("tooltip", "Steam level");
 	keyDisplay.setAttribute("tooltip", "Tradable keys in inventory");
 	refDisplay.setAttribute("tooltip", "Tradable refined in inventory");
 	addButton.setAttribute("tooltip", "Add friend");
@@ -309,6 +312,7 @@ async function userBuilder(userObject, n) {
 	removeButton.setAttribute("tooltip", "Remove listing");
 	removeButton.setAttribute("onclick", `removeUser(${n})`);
 	hoursDisplay.setAttribute("pos", "bottom");
+	levelDisplay.setAttribute("pos", "bottom");
 	keyDisplay.setAttribute("pos", "bottom");
 	refDisplay.setAttribute("pos", "bottom");
 	addButton.setAttribute("pos", "bottom");
@@ -325,6 +329,12 @@ async function userBuilder(userObject, n) {
 		hoursDisplay.appendChild(document.createTextNode("Private"));
 	}
 
+	if (userObject.level !== undefined) {
+		levelDisplay.appendChild(document.createTextNode("lvl "+ userObject.level));
+	} else {
+		levelDisplay.appendChild(document.createTextNode("Private"));
+	}
+
 	refDisplay.appendChild(document.createTextNode(scrapToRef(userObject.inventoryScrap) + " Ref"));
 	keyDisplay.appendChild(document.createTextNode(userObject.inventoryKeys + " Keys"));
 
@@ -338,6 +348,7 @@ async function userBuilder(userObject, n) {
 	actions.appendChild(addButton);
 	actions.appendChild(profileButton);
 	actions.appendChild(hoursDisplay);
+	actions.appendChild(levelDisplay);
 	if (userObject.inventoryKeys > 0) actions.appendChild(keyDisplay);
 	if (userObject.inventoryScrap > 0) actions.appendChild(refDisplay);
 	actions.appendChild(spacer);
@@ -435,6 +446,7 @@ async function startScan(ids, settings) {
 				itemContainer.classList.add("items");
 				var skinContainer = document.createElement("div");
 				skinContainer.classList.add("items");
+				if (inventory === "timeout") continue;
 				for (var z in inventory) {
 					// Get the item stats
 					var item = inventory[z];
@@ -618,6 +630,12 @@ async function startScan(ids, settings) {
 								}
 							}
 						}
+
+						var level_page = await fetch(`https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${config.apikey}&steamid=${userObject.steamid}`);
+						var level = await level_page.json();
+						
+						level = level.response.player_level;
+						userObject.level = level;
 
 						var user = await userBuilder(userObject, n);
 						if (skinContainer.children.length > 0) user.appendChild(skinContainer);
