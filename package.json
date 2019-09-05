@@ -26,6 +26,6 @@
 		"vdf": "0.0.2"
 	},
 	"devDependencies": {
-		"electron": "^2.0.4"
+		"electron": "^2.0.8"
 	}
 }
