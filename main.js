@@ -811,28 +811,26 @@ async function getUserInventory(steamid, settings) {
 		if (quality2 != 6 && quality2 != undefined) {
 			name_original = `${quality2_name} ${name_original}`;
 		}
-		for (var q = 0; q < item.quantity; q++) {
-			response.push({
-				name,
-				name_original,
-				quality,
-				quality_name,
-				craftable,
-				killstreak,
-				australium,
-				image,
-				effect,
-				effect_image,
-				crate,
-				tradable,
-				available,
-				skin_id,
-				skin_wear,
-				quality2,
-				quality2_name,
-				target
-			})
-		}
+		response.push({
+			name,
+			name_original,
+			quality,
+			quality_name,
+			craftable,
+			killstreak,
+			australium,
+			image,
+			effect,
+			effect_image,
+			crate,
+			tradable,
+			available,
+			skin_id,
+			skin_wear,
+			quality2,
+			quality2_name,
+			target
+		});
 	}
 	return response;
 }
