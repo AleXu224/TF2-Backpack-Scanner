@@ -20,12 +20,11 @@
 	"homepage": "https://github.com/AleXu224/TF2-Backpack-Scanner#readme",
 	"dependencies": {
 		"await": "^0.2.6",
+		"electron": "^7.1.0",
 		"electron-debug": "^3.0.0",
-		"node-fetch": "^2.1.2",
+		"node-fetch": "^2.6.0",
 		"steamid": "^1.1.0",
 		"vdf": "0.0.2"
 	},
-	"devDependencies": {
-		"electron": "^2.0.4"
-	}
+	"devDependencies": {}
 }

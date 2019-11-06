@@ -101,7 +101,7 @@ async function schemaRefresh() {
 		}
 	})
 	progress.innerText = "Fetching the skin ids";
-	var protoObjs_page = await fetch(`https://wiki.teamfortress.com/w/images/4/43/Tf_proto_obj_defs_english.txt`);
+	var protoObjs_page = await fetch(`https://raw.githubusercontent.com/SteamDatabase/GameTracking-TF2/master/tf/resource/tf_proto_obj_defs_english.txt`);
 	var protoObjs = await protoObjs_page.text();
 	var parsed = vdf.parse(protoObjs);
 	for (var lang in parsed) {
