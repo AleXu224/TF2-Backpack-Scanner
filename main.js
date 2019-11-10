@@ -18,6 +18,7 @@ var keyprice;
 var schema;
 var bptf_schema;
 var skin_list;
+var local_version = "1.3.0";
 
 initialize();
 
@@ -59,7 +60,6 @@ async function initialize() {
 		return false;
 	}
 	versionCheck();
-	openWindow('scaninfo');
 }
 
 async function versionCheck() {
@@ -68,7 +68,6 @@ async function versionCheck() {
 		return false;
 	}
 	var rep_version = await version_page.text();
-	var local_version = await fs.readFileSync("./version", "utf8");
 
 	if (rep_version !== local_version) {
 		var version_element = document.getElementById("version");
