@@ -2,7 +2,7 @@
 An easy to use TF2 backpack/item scanner.
 Supports group scanning, server statuses and steam ids and comes with a variety of filters to help with your trading.
 
-![](https://i.imgur.com/WTfjMaP.png)
+![](https://i.imgur.com/96e3YL4.png)
 
 If you find any bugs or have a request please let me know by making an issue in the [Issues](https://github.com/AleXu224/TF2-Backpack-Scanner/issues) tab
 
