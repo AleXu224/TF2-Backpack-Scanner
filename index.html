@@ -34,67 +34,97 @@
 					<i class="material-icons">arrow_back</i>
 				</div>
 				<div class="option" id="start2" tooltip="Start scan" pos="right"
-					onclick="scan();closeWindow('scaninfo')">
+					onclick="scan()">
 					<i class="material-icons">play_arrow</i>
 				</div>
 				<div class="option hidden" id="stop2" tooltip="Stop scan" pos="right" onclick="stopScan()">
 					<i class="material-icons">stop</i>
 				</div>
 			</div>
-			<div class="spacer"></div>
-			<textarea id="userScan" placeholder="User List"></textarea>
-			<div class="settings">
-				<div class="subtitle">Scan settings</div>
-				<div class="note">Leave fields empty for their default value</div>
-				<div class="valueInput">
-					<div class="inputName">Max refined in user inventory</div>
-					<input type="text" id="maxRef">
-					<div class="underline"></div>
-				</div>
-				<div class="valueInput">
-					<div class="inputName">Max keys in user inventory</div>
-					<input type="text" id="maxKeys">
-					<div class="underline"></div>
-				</div>
-				<div class="valueInput">
-					<div class="inputName">Minimum item price (refined)</div>
-					<input type="text" id="minRef">
-					<div class="underline"></div>
-				</div>
-				<div class="valueInput">
-					<div class="inputName">Minimum item price (keys)</div>
-					<input type="text" id="minKeys">
-					<div class="underline"></div>
-				</div>
-				<div class="valueInput">
-					<div class="inputName">Show items that are temporarily untradable</div>
-					<div class="checkbox">
-						<input type="checkbox" id="untradable" class="checkbox" checked="true">
-						<div>
-							<div></div>
+
+			<div class="list" id="scanSettingsList">
+				<div class="settings">
+					<div class="subtitle">Scan settings</div>
+					<div class="note">Leave fields empty for their default value</div>
+					<div class="valueInput">
+						<div class="inputName">Max refined in user inventory</div>
+						<input type="text" id="maxRef">
+						<div class="underline"></div>
+					</div>
+					<div class="valueInput">
+						<div class="inputName">Max keys in user inventory</div>
+						<input type="text" id="maxKeys">
+						<div class="underline"></div>
+					</div>
+					<div class="valueInput">
+						<div class="inputName">Minimum item price (refined)</div>
+						<input type="text" id="minRef">
+						<div class="underline"></div>
+					</div>
+					<div class="valueInput">
+						<div class="inputName">Minimum item price (keys)</div>
+						<input type="text" id="minKeys">
+						<div class="underline"></div>
+					</div>
+					<div class="valueInput">
+						<div class="inputName">Show items that are temporarily untradable</div>
+						<div class="checkbox">
+							<input type="checkbox" id="untradable" class="checkbox" checked="true">
+							<div>
+								<div></div>
+							</div>
 						</div>
 					</div>
-				</div>
-				<div class="valueInput">
-					<div class="inputName">Show items without a value</div>
-					<div class="checkbox">
-						<input type="checkbox" id="unvalued" class="checkbox">
-						<div>
-							<div></div>
+					<div class="valueInput">
+						<div class="inputName">Show items without a value</div>
+						<div class="checkbox">
+							<input type="checkbox" id="unvalued" class="checkbox">
+							<div>
+								<div></div>
+							</div>
 						</div>
 					</div>
-				</div>
-				<div class="valueInput">
-					<div class="inputName">Show weapon skins</div>
-					<div class="checkbox">
-						<input type="checkbox" id="skins" class="checkbox" checked="true">
-						<div>
-							<div></div>
+					<div class="valueInput">
+						<div class="inputName">Show weapon skins</div>
+						<div class="checkbox">
+							<input type="checkbox" id="skins" class="checkbox" checked="true">
+							<div>
+								<div></div>
+							</div>
 						</div>
 					</div>
+
+					<div class="subtitle">Group settings</div>
+
+					<div class="valueInput">
+						<div class="inputName">Group scan</div>
+						<div class="checkbox">
+							<input type="checkbox" id="group" class="checkbox" onclick="groupToggle()">
+							<div>
+								<div></div>
+							</div>
+						</div>
+					</div>
+
+					<div class="valueInput">
+						<div class="inputName">Pages to scan</div>
+						<input type="text" id="pages">
+						<div class="underline"></div>
+					</div>
+					<div class="valueInput">
+						<div class="inputName">Pages to skip</div>
+						<input type="text" id="skip">
+						<div class="underline"></div>
+					</div>
+
 				</div>
+				
+				<div class="filler"></div>
+
 			</div>
-			<div class="spacer"></div>
+			<textarea id="userScan" class="scanInput" placeholder="User list"></textarea>
+
+
 		</div>
 		<div id="settings" class="hidden">
 			<div class="options">
@@ -136,6 +166,10 @@
 					<i class="material-icons">stop</i>
 				</div>
 				<div class="spacer"></div>
+				<div class="option hidden" id="version" tooltip="New Version Is Available" pos="right"
+					onclick="openLink('https://github.com/AleXu224/TF2-Backpack-Scanner/releases/latest')">
+					<i class="material-icons">update</i>
+				</div>
 				<div class="option" tooltip="Settings" pos="right" onclick="openWindow('settings')">
 					<i class="material-icons">settings</i>
 				</div>

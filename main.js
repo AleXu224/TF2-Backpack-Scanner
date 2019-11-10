@@ -9,63 +9,79 @@ var vdf = require('vdf');
 var fs = require('fs');
 var win = remote.getCurrentWindow();
 const shell = require('electron').shell;
+
+// Globals
 var stop = true;
+var group_scan = false;
 var config = undefined;
 var keyprice;
+var schema;
+var bptf_schema;
+var skin_list;
 
-fs.readFile("./config.json", "utf8", async function (err, data) {
-	if (err) {
-		console.log(`Config has not been created yet`);
+initialize();
+
+async function initialize() {
+	try {
+		config = JSON.parse(await fs.readFileSync("./config.json", "utf8"));
+	} catch (err) {
 		openWindow("settings");
-	} else {
-		config = JSON.parse(data);
-		document.getElementById("apikey").value = config.apikey;
-		if (config.maxRef !== undefined) {
-			document.getElementById("maxRef").value = config.maxRef;
-			document.getElementById("maxKeys").value = config.maxKeys;
-			document.getElementById("minRef").value = config.minRef;
-			document.getElementById("minKeys").value = config.minKeys;
-			document.getElementById("untradable").checked = config.untradable;
-			document.getElementById("unvalued").checked = config.unvalued;
-			document.getElementById("skins").checked = config.skins;
-		}
-
-		var ts = getTime();
-		if (config.ts == undefined || config.ts + 60 * 60 * 24 * 7 < ts) {
-			schemaRefresh();
-		} else {
-			fs.readFile("./schema.json", "utf8", (err, data_schema) => {
-				if (err) {
-					console.log(err);
-					schemaRefresh();
-				} else {
-					schema = JSON.parse(data_schema);
-				}
-			})
-			fs.readFile("./schema_bptf.json", "utf8", (err, data_schema_bptf) => {
-				if (err) {
-					console.log(err);
-					schemaRefresh();
-				} else {
-					bptf_schema = JSON.parse(data_schema_bptf);
-					keyprice = bptf_schema.response.items["Mann Co. Supply Crate Key"].prices[6].Tradable.Craftable[0].value;
-				}
-			})
-			fs.readFile("./skins.json", "utf8", (err, data_skin_list) => {
-				if (err) {
-					console.log(err);
-					schemaRefresh();
-				} else {
-					skin_list = JSON.parse(data_skin_list);
-				}
-			})
-		}
+		return false;
 	}
-})
+
+	var ts = getTime();
+	if (config.ts == undefined || config.ts + 60 * 60 * 24 * 7 < ts) {
+		schemaRefresh();
+		return false;
+	}
+
+	document.getElementById("apikey").value = config.apikey;
+
+	if (config.maxRef !== undefined) {
+		document.getElementById("maxRef").value = config.maxRef;
+		document.getElementById("maxKeys").value = config.maxKeys;
+		document.getElementById("minRef").value = config.minRef;
+		document.getElementById("minKeys").value = config.minKeys;
+		document.getElementById("untradable").checked = config.untradable;
+		document.getElementById("unvalued").checked = config.unvalued;
+		document.getElementById("skins").checked = config.skins;
+		document.getElementById("pages").value = config.pages;
+		document.getElementById("skip").value = config.skip;
+	}
+
+	try {
+		schema = await JSON.parse(fs.readFileSync("./schema.json", "utf8"));
+		bptf_schema = await JSON.parse(fs.readFileSync("./schema_bptf.json", "utf8"));
+		keyprice = bptf_schema.response.items["Mann Co. Supply Crate Key"].prices[6].Tradable.Craftable[0].value;
+		skin_list = await JSON.parse(fs.readFileSync("./skins.json", "utf8"));
+	} catch (error) {
+		schemaRefresh();
+		return false;
+	}
+	versionCheck();
+	openWindow('scaninfo');
+}
+
+async function versionCheck() {
+	var version_page = await fetch(`https://raw.githubusercontent.com/AleXu224/TF2-Backpack-Scanner/master/version`);
+	if (!version_page.ok) {
+		return false;
+	}
+	var rep_version = await version_page.text();
+	var local_version = await fs.readFileSync("./version", "utf8");
+
+	if (rep_version !== local_version) {
+		var version_element = document.getElementById("version");
+		version_element.setAttribute("tooltip", `Version ${rep_version} is available!`);
+		version_element.classList.remove("hidden");
+	}
+}
 
 async function schemaRefresh() {
 	openWindow("splash");
 	var progress = document.getElementById("progress");
+
+	// TF2 item schema
 	progress.innerText = "Downloading the item schema (1/6)";
 	var schema_1_page = await fetch(`http://api.steampowered.com/IEconItems_440/GetSchemaItems/v0001/?key=${config.apikey}&language=en_US`);
 	var schema_1 = await schema_1_page.json();
@@ -86,20 +102,16 @@ async function schemaRefresh() {
 	var schema_6 = await schema_6_page.json();
 	progress.innerText = "Merging item schema";
 	schema = schema_1.result.items.concat(schema_2.result.items, schema_3.result.items, schema_4.result.items, schema_5.result.items, schema_6.result.items);
-	fs.writeFile('./schema.json', JSON.stringify(schema), (err) => {
-		if (err) {
-			console.log(err);
-		}
-	})
+	await fs.writeFileSync("./schema.json", JSON.stringify(schema));
+
+	// Backpack.tf prices
 	progress.innerText = "Downloading the backpack.tf prices";
 	var bptf_schema_page = await fetch(`https://raw.githubusercontent.com/AleXu224/bptf_pricelist/master/schema_bptf.json`);
 	bptf_schema = await bptf_schema_page.json();
 	keyprice = bptf_schema.response.items["Mann Co. Supply Crate Key"].prices[6].Tradable.Craftable[0].value;
-	fs.writeFile('./schema_bptf.json', JSON.stringify(bptf_schema), (err) => {
-		if (err) {
-			console.log(err);
-		}
-	})
+	await fs.writeFileSync("./schema_bptf.json", JSON.stringify(bptf_schema));
+
+	// Skin names
 	progress.innerText = "Fetching the skin ids";
 	var protoObjs_page = await fetch(`https://raw.githubusercontent.com/SteamDatabase/GameTracking-TF2/master/tf/resource/tf_proto_obj_defs_english.txt`);
 	var protoObjs = await protoObjs_page.text();
@@ -120,20 +132,15 @@ async function schemaRefresh() {
 			skin_list[id] = name;
 		}
 	}
-	fs.writeFile('./skins.json', JSON.stringify(skin_list), (err) => {
-		if (err) {
-			console.log(err);
-		}
-	})
+	await fs.writeFileSync("./skins.json", JSON.stringify(skin_list));
+	
+	// Finishing up
 	progress.innerText = "Done";
 	var ts = getTime();
 	config.ts = ts;
-	fs.writeFile('./config.json', JSON.stringify(config), (err) => {
-		if (err) {
-			console.log(err);
-		}
-	})
+	await fs.writeFileSync("./config.json", JSON.stringify(config));
 	closeWindow("splash");
+	versionCheck();
 }
 
 async function openLink(link) {
@@ -164,6 +171,43 @@ function timeout(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function groupToggle() {
+	var toggle = document.getElementById("group");
+	var group = toggle.checked;
+	var userScan = document.getElementById("userScan");
+	scanSettingsList = document.getElementById("scanSettingsList");
+	if (group) {
+		scanSettingsList.classList.add("group");
+		userScan.setAttribute("placeholder", "Group link");
+	} else {
+		scanSettingsList.classList.remove("group");
+		userScan.setAttribute("placeholder", "User list");
+	}
+	group_scan = group;
+}
+
+async function getIdsFromGroup(link, pages, skip) {
+	if (!link.match(/.*\/$/)) {
+		link += "/";
+	}
+	link += "memberslistxml?xml=1&p=";
+
+	var group_members
+	
+	for (let i = skip + 1; i <= pages + skip; i++) {
+		try {
+			var group_members_page = await fetch(link + i);
+		} catch (error) {
+			return null;
+		}
+		if (!group_members_page.ok) {
+			return 1;
+		}
+		group_members += await group_members_page.text();
+	}
+	return group_members;
+}
+
 function saveSettings() {
 	var apikey = document.getElementById("apikey").value;
 	if (apikey.length != 32) {
@@ -192,7 +236,7 @@ function saveSettings() {
 	}
 }
 
-function scan() {
+async function scan() {
 	if (config == undefined) {
 		openWindow("settings");
 		return false;
@@ -204,6 +248,8 @@ function scan() {
 	var untradable = document.getElementById("untradable").checked;
 	var unvalued = document.getElementById("unvalued").checked;
 	var skins = document.getElementById("skins").checked;
+	var pages = document.getElementById("pages").value;
+	var skip = document.getElementById("skip").value;
 
 	config.maxRef = maxRef;
 	config.maxKeys = maxKeys;
@@ -212,27 +258,29 @@ function scan() {
 	config.untradable = untradable;
 	config.unvalued = unvalued;
 	config.skins = skins;
-
-	fs.writeFile('./config.json', JSON.stringify(config), (err) => {
-		if (err) {
-			console.log(err);
-		}
-	});
+	config.pages = pages;
+	config.skip = skip;
 
 	if (maxRef == "") maxRef = -1;
 	if (maxKeys == "") maxKeys = -1;
 	if (minRef == "") minRef = 0;
 	if (minKeys == "") minKeys = 0;
+	if (pages == "") pages = 1;
+	if (skip == "") skip = 0;
 
 	maxRef = parseFloat(maxRef);
 	maxKeys = parseFloat(maxKeys);
 	minRef = parseFloat(minRef);
 	minKeys = parseFloat(minKeys);
+	pages = parseFloat(pages);
+	skip = parseFloat(skip);
 
-	if (isNaN(maxRef) || isNaN(maxKeys) || isNaN(minRef) || isNaN(minKeys)) {
+	if (isNaN(maxRef) || isNaN(maxKeys) || isNaN(minRef) || isNaN(minKeys) || isNaN(pages) || isNaN(skip)) {
 		alert("All inputs have to be numbers");
 		return false;
 	}
+	if (pages < 1) pages = 1;
+	if (skip < 0) skip = 0;
 	var settings = {
 		maxRef,
 		maxKeys,
@@ -240,10 +288,27 @@ function scan() {
 		minKeys,
 		untradable,
 		unvalued,
-		skins
+		skins,
+		pages,
+		skip
 	}
 
-	var input = document.getElementById("userScan").value;
+	await fs.writeFileSync("./config.json", JSON.stringify(config));
+
+	input = document.getElementById("userScan").value;
+	if (group_scan) {
+		input = await getIdsFromGroup(input, settings.pages, settings.skip);
+		console.log(`Group`);
+		if (!input) {
+			alert("Invalid link");
+			return false;
+		}
+		if (input === 1) {
+			alert("Steam servers are unavailable at the moment");
+			return false;
+		}
+	}
+	closeWindow('scaninfo');
 	var ids = [];
 	var ids1 = input.match(/7656119[0-9]{10}/g);
 	var ids2 = input.match(/\[U:1:[0-9]{9}\]/g);
@@ -253,6 +318,7 @@ function scan() {
 		ids.push(newID);
 	}
 	var ids = ids.concat(ids1);
+	
 	document.getElementById("userScan").value = '';
 	startScan(ids, settings)
 }
@@ -330,7 +396,7 @@ async function userBuilder(userObject, n) {
 	}
 
 	if (userObject.level !== undefined) {
-		levelDisplay.appendChild(document.createTextNode("lvl "+ userObject.level));
+		levelDisplay.appendChild(document.createTextNode("lvl " + userObject.level));
 	} else {
 		levelDisplay.appendChild(document.createTextNode("Private"));
 	}
@@ -633,7 +699,7 @@ async function startScan(ids, settings) {
 
 						var level_page = await fetch(`https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${config.apikey}&steamid=${userObject.steamid}`);
 						var level = await level_page.json();
-						
+
 						level = level.response.player_level;
 						userObject.level = level;
 
