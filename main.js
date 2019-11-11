@@ -18,7 +18,8 @@ var keyprice;
 var schema;
 var bptf_schema;
 var skin_list;
-var local_version = "1.3.0";
+var local_version = "1.3.1";
+var last_input;
 
 initialize();
 
@@ -43,6 +44,7 @@ async function initialize() {
 		document.getElementById("maxKeys").value = config.maxKeys;
 		document.getElementById("minRef").value = config.minRef;
 		document.getElementById("minKeys").value = config.minKeys;
+		document.getElementById("maxHistory").value = config.maxHistory;
 		document.getElementById("untradable").checked = config.untradable;
 		document.getElementById("unvalued").checked = config.unvalued;
 		document.getElementById("skins").checked = config.skins;
@@ -132,7 +134,7 @@ async function schemaRefresh() {
 		}
 	}
 	await fs.writeFileSync("./skins.json", JSON.stringify(skin_list));
-	
+
 	// Finishing up
 	progress.innerText = "Done";
 	var ts = getTime();
@@ -192,7 +194,7 @@ async function getIdsFromGroup(link, pages, skip) {
 	link += "memberslistxml?xml=1&p=";
 
 	var group_members
-	
+
 	for (let i = skip + 1; i <= pages + skip; i++) {
 		try {
 			var group_members_page = await fetch(link + i);
@@ -244,6 +246,7 @@ async function scan() {
 	var maxKeys = document.getElementById("maxKeys").value;
 	var minRef = document.getElementById("minRef").value;
 	var minKeys = document.getElementById("minKeys").value;
+	var maxHistory = document.getElementById("maxHistory").value;
 	var untradable = document.getElementById("untradable").checked;
 	var unvalued = document.getElementById("unvalued").checked;
 	var skins = document.getElementById("skins").checked;
@@ -254,6 +257,7 @@ async function scan() {
 	config.maxKeys = maxKeys;
 	config.minRef = minRef;
 	config.minKeys = minKeys;
+	config.maxHistory = maxHistory;
 	config.untradable = untradable;
 	config.unvalued = unvalued;
 	config.skins = skins;
@@ -264,6 +268,7 @@ async function scan() {
 	if (maxKeys == "") maxKeys = -1;
 	if (minRef == "") minRef = 0;
 	if (minKeys == "") minKeys = 0;
+	if (maxHistory == "") maxHistory = -1;
 	if (pages == "") pages = 1;
 	if (skip == "") skip = 0;
 
@@ -271,11 +276,12 @@ async function scan() {
 	maxKeys = parseFloat(maxKeys);
 	minRef = parseFloat(minRef);
 	minKeys = parseFloat(minKeys);
+	maxHistory = parseFloat(maxHistory);
 	pages = parseFloat(pages);
 	skip = parseFloat(skip);
 
-	if (isNaN(maxRef) || isNaN(maxKeys) || isNaN(minRef) || isNaN(minKeys) || isNaN(pages) || isNaN(skip)) {
-		alert("All inputs have to be numbers");
+	if (isNaN(maxRef) || isNaN(maxKeys) || isNaN(minRef) || isNaN(minKeys) || isNaN(pages) || isNaN(skip) || isNaN(maxHistory)) {
+		alert("All settings have to be numbers");
 		return false;
 	}
 	if (pages < 1) pages = 1;
@@ -285,6 +291,7 @@ async function scan() {
 		maxKeys,
 		minRef,
 		minKeys,
+		maxHistory,
 		untradable,
 		unvalued,
 		skins,
@@ -294,7 +301,10 @@ async function scan() {
 
 	await fs.writeFileSync("./config.json", JSON.stringify(config));
 
-	input = document.getElementById("userScan").value;
+	if (document.getElementById("userScan").value == "" && last_input != undefined) input = last_input;
+	else input = document.getElementById("userScan").value;
+	last_input = input;
+
 	if (group_scan) {
 		input = await getIdsFromGroup(input, settings.pages, settings.skip);
 		console.log(`Group`);
@@ -317,7 +327,7 @@ async function scan() {
 		ids.push(newID);
 	}
 	var ids = ids.concat(ids1);
-	
+
 	document.getElementById("userScan").value = '';
 	startScan(ids, settings)
 }
@@ -347,6 +357,7 @@ async function userBuilder(userObject, n) {
 	var avatarCircle = document.createElement("div");
 	var hoursDisplay = document.createElement("div");
 	var levelDisplay = document.createElement("div");
+	var historyDisplay = document.createElement("div");
 	var keyDisplay = document.createElement("div");
 	var refDisplay = document.createElement("div");
 	var addButton = document.createElement("div");
@@ -360,6 +371,7 @@ async function userBuilder(userObject, n) {
 
 	hoursDisplay.classList.add("hours");
 	levelDisplay.classList.add("hours");
+	historyDisplay.classList.add("hours");
 	keyDisplay.classList.add("hours");
 	refDisplay.classList.add("hours");
 	addButton.classList.add("action");
@@ -368,6 +380,7 @@ async function userBuilder(userObject, n) {
 
 	hoursDisplay.setAttribute("tooltip", "Hours played");
 	levelDisplay.setAttribute("tooltip", "Steam level");
+	historyDisplay.setAttribute("tooltip", "Saved history states on backpack.tf");
 	keyDisplay.setAttribute("tooltip", "Tradable keys in inventory");
 	refDisplay.setAttribute("tooltip", "Tradable refined in inventory");
 	addButton.setAttribute("tooltip", "Add friend");
@@ -378,6 +391,7 @@ async function userBuilder(userObject, n) {
 	removeButton.setAttribute("onclick", `removeUser(${n})`);
 	hoursDisplay.setAttribute("pos", "bottom");
 	levelDisplay.setAttribute("pos", "bottom");
+	historyDisplay.setAttribute("pos", "bottom");
 	keyDisplay.setAttribute("pos", "bottom");
 	refDisplay.setAttribute("pos", "bottom");
 	addButton.setAttribute("pos", "bottom");
@@ -386,7 +400,7 @@ async function userBuilder(userObject, n) {
 
 	if (userObject.hours !== undefined) {
 		if (userObject.hours != 0) {
-			hoursDisplay.appendChild(document.createTextNode(userObject.hours));
+			hoursDisplay.appendChild(document.createTextNode(userObject.hours + " Hrs"));
 		} else {
 			hoursDisplay.appendChild(document.createTextNode("Private"));
 		}
@@ -398,6 +412,12 @@ async function userBuilder(userObject, n) {
 		levelDisplay.appendChild(document.createTextNode("lvl " + userObject.level));
 	} else {
 		levelDisplay.appendChild(document.createTextNode("Private"));
+	}
+
+	if (userObject.history_states != undefined) {
+		historyDisplay.appendChild(document.createTextNode(userObject.history_states));
+	} else {
+		historyDisplay.appendChild(document.createTextNode("Unknown"));
 	}
 
 	refDisplay.appendChild(document.createTextNode(scrapToRef(userObject.inventoryScrap) + " Ref"));
@@ -414,6 +434,7 @@ async function userBuilder(userObject, n) {
 	actions.appendChild(profileButton);
 	actions.appendChild(hoursDisplay);
 	actions.appendChild(levelDisplay);
+	actions.appendChild(historyDisplay);
 	if (userObject.inventoryKeys > 0) actions.appendChild(keyDisplay);
 	if (userObject.inventoryScrap > 0) actions.appendChild(refDisplay);
 	actions.appendChild(spacer);
@@ -684,6 +705,27 @@ async function startScan(ids, settings) {
 				}
 				if (items > 0) {
 					async function sendData(userObject, itemContainer, skinContainer) {
+						// Backpack history states
+						var bptf_history_page = await fetch(`https://backpack.tf/profiles/${userObject.steamid}`);
+						// Check if status is 200
+						if (bptf_history_page.ok) {
+							var bptf_history = await bptf_history_page.text();
+							// If there are no matches then history_element will be null, that means there are no history states
+							var history_element = bptf_history.match(/Most Recent[\S\s]*<\/select/i);
+							if (history_element) {
+								var history_elements = history_element[0].match(/value/gi);
+								userObject.history_states = history_elements.length;
+							} else {
+								userObject.history_states = 0;
+							}
+						}
+
+						if (maxHistory >= 0) {
+							if (userObject.history_states == undefined) return false;
+							if (userObject.history_states > maxHistory) return false;
+						}
+
+						// Game time
 						var games_page = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${config.apikey}&steamid=${userObject.steamid}&format=json&include_played_free_games=1`);
 						var games = await games_page.json();
 
@@ -696,6 +738,7 @@ async function startScan(ids, settings) {
 							}
 						}
 
+						// User level
 						var level_page = await fetch(`https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${config.apikey}&steamid=${userObject.steamid}`);
 						var level = await level_page.json();
 
