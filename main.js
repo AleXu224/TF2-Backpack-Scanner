@@ -18,7 +18,7 @@ var keyprice;
 var schema;
 var bptf_schema;
 var skin_list;
-var local_version = "1.3.1";
+var local_version = "1.3.2";
 var last_input;
 
 initialize();
@@ -704,7 +704,7 @@ async function startScan(ids, settings) {
 					}
 				}
 				if (items > 0) {
-					async function sendData(userObject, itemContainer, skinContainer) {
+					async function sendData(userObject, itemContainer, skinContainer, settings) {
 						// Backpack history states
 						var bptf_history_page = await fetch(`https://backpack.tf/profiles/${userObject.steamid}`);
 						// Check if status is 200
@@ -720,9 +720,9 @@ async function startScan(ids, settings) {
 							}
 						}
 
-						if (maxHistory >= 0) {
+						if (settings.maxHistory >= 0) {
 							if (userObject.history_states == undefined) return false;
-							if (userObject.history_states > maxHistory) return false;
+							if (userObject.history_states > settings.maxHistory) return false;
 						}
 
 						// Game time
@@ -757,20 +757,20 @@ async function startScan(ids, settings) {
 					}
 					if (settings.maxKeys != -1 && settings.maxRef != -1) {
 						if (settings.maxKeys > userObject.inventoryKeys) {
-							sendData(userObject, itemContainer, skinContainer);
+							sendData(userObject, itemContainer, skinContainer, settings);
 						} else if (settings.maxKeys == userObject.inventoryKeys && settings.maxRef >= scrapToRef(userObject.inventoryScrap)) {
-							sendData(userObject, itemContainer, skinContainer);
+							sendData(userObject, itemContainer, skinContainer, settings);
 						}
 					} else if (settings.maxKeys != -1) {
 						if (settings.maxKeys >= userObject.inventoryKeys) {
-							sendData(userObject, itemContainer, skinContainer);
+							sendData(userObject, itemContainer, skinContainer, settings);
 						}
 					} else if (settings.maxRef != -1) {
 						if (settings.maxRef >= scrapToRef(userObject.inventoryScrap)) {
-							sendData(userObject, itemContainer, skinContainer);
+							sendData(userObject, itemContainer, skinContainer, settings);
 						}
 					} else {
-						sendData(userObject, itemContainer, skinContainer);
+						sendData(userObject, itemContainer, skinContainer, settings);
 					}
 				}
 			}
