@@ -18,7 +18,7 @@ var keyprice;
 var schema;
 var bptf_schema;
 var skin_list;
-var local_version = "1.3.2";
+var local_version = "1.3.3";
 var last_input;
 
 initialize();
@@ -50,6 +50,7 @@ async function initialize() {
 		document.getElementById("skins").checked = config.skins;
 		document.getElementById("pages").value = config.pages;
 		document.getElementById("skip").value = config.skip;
+		document.getElementById("maxHours").value = config.maxHours;
 	}
 
 	try {
@@ -252,6 +253,7 @@ async function scan() {
 	var skins = document.getElementById("skins").checked;
 	var pages = document.getElementById("pages").value;
 	var skip = document.getElementById("skip").value;
+	var maxHours = document.getElementById("maxHours").value;
 
 	config.maxRef = maxRef;
 	config.maxKeys = maxKeys;
@@ -263,6 +265,7 @@ async function scan() {
 	config.skins = skins;
 	config.pages = pages;
 	config.skip = skip;
+	config.maxHours = maxHours;
 
 	if (maxRef == "") maxRef = -1;
 	if (maxKeys == "") maxKeys = -1;
@@ -271,6 +274,7 @@ async function scan() {
 	if (maxHistory == "") maxHistory = -1;
 	if (pages == "") pages = 1;
 	if (skip == "") skip = 0;
+	if (maxHours == "") maxHours = -1;
 
 	maxRef = parseFloat(maxRef);
 	maxKeys = parseFloat(maxKeys);
@@ -279,8 +283,9 @@ async function scan() {
 	maxHistory = parseFloat(maxHistory);
 	pages = parseFloat(pages);
 	skip = parseFloat(skip);
+	maxHours = parseFloat(maxHours);
 
-	if (isNaN(maxRef) || isNaN(maxKeys) || isNaN(minRef) || isNaN(minKeys) || isNaN(pages) || isNaN(skip) || isNaN(maxHistory)) {
+	if (isNaN(maxRef) || isNaN(maxKeys) || isNaN(minRef) || isNaN(minKeys) || isNaN(pages) || isNaN(skip) || isNaN(maxHistory) || isNaN(maxHours)) {
 		alert("All settings have to be numbers");
 		return false;
 	}
@@ -296,7 +301,8 @@ async function scan() {
 		unvalued,
 		skins,
 		pages,
-		skip
+		skip,
+		maxHours
 	}
 
 	await fs.writeFileSync("./config.json", JSON.stringify(config));
@@ -737,6 +743,9 @@ async function startScan(ids, settings) {
 								}
 							}
 						}
+
+						if (settings.maxHours >= 0 && game_list == undefined) return false;
+						if (settings.maxHours >= 0 && userObject.hours > settings.maxHours) return false;
 
 						// User level
 						var level_page = await fetch(`https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${config.apikey}&steamid=${userObject.steamid}`);
