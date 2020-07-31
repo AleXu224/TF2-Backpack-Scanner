@@ -18,8 +18,12 @@ var keyprice;
 var schema;
 var bptf_schema;
 var skin_list;
-var local_version = "1.3.3";
+var effects;
+var local_version = "1.4.0";
 var last_input;
+
+/**
+ */
 
 initialize();
 
@@ -58,6 +62,7 @@ async function initialize() {
 		bptf_schema = await JSON.parse(fs.readFileSync("./schema_bptf.json", "utf8"));
 		keyprice = bptf_schema.response.items["Mann Co. Supply Crate Key"].prices[6].Tradable.Craftable[0].value;
 		skin_list = await JSON.parse(fs.readFileSync("./skins.json", "utf8"));
+		effects = await JSON.parse(fs.readFileSync("./effects.json", "utf8"));
 	} catch (error) {
 		schemaRefresh();
 		return false;
@@ -135,6 +140,12 @@ async function schemaRefresh() {
 		}
 	}
 	await fs.writeFileSync("./skins.json", JSON.stringify(skin_list));
+
+	// Effects
+	progress.innerText = "Fetching the effects";
+	var effectsObjs_page = await fetch(`https://raw.githubusercontent.com/mninc/tf2-effects/master/effects.json`);
+	var effectsObjs = await effectsObjs_page.json();
+	await fs.writeFileSync("./effects.json", JSON.stringify(effectsObjs));
 
 	// Finishing up
 	progress.innerText = "Done";
@@ -291,6 +302,9 @@ async function scan() {
 	}
 	if (pages < 1) pages = 1;
 	if (skip < 0) skip = 0;
+
+	var totalMinPrice = (minKeys >= 0 ? minKeys : 0) + (minRef >= 0 ? minRef : 0) / keyprice;
+
 	var settings = {
 		maxRef,
 		maxKeys,
@@ -302,7 +316,8 @@ async function scan() {
 		skins,
 		pages,
 		skip,
-		maxHours
+		maxHours,
+		totalMinPrice
 	}
 
 	await fs.writeFileSync("./config.json", JSON.stringify(config));
@@ -335,14 +350,497 @@ async function scan() {
 	var ids = ids.concat(ids1);
 
 	document.getElementById("userScan").value = '';
-	startScan(ids, settings)
+	startScanRe(ids, settings)
 }
 
 async function removeUser(id) {
 	document.getElementById(id).remove();
 }
 
-async function userBuilder(userObject, n) {
+async function stopScan() {
+	stop = true;
+	document.getElementById("stop").classList.add("hidden");
+	document.getElementById("stop2").classList.add("hidden");
+	document.getElementById("start").classList.remove("hidden");
+	document.getElementById("start2").classList.remove("hidden");
+}
+
+async function endTimer(t0) {
+	var t1 = performance.now();
+	var t = (t1 - t0) / 1000;
+	var t = t.toFixed(3);
+	document.getElementById("status").innerText = `The scan took ${t} seconds`;
+}
+
+class Player {
+    constructor(data) {
+        this.steamid = data.steamid;
+        this.name = data.personaname;
+        this.avatarUrl = data.avatarmedium;
+        this.playerId = data.steamid.toString() + (Math.round(Math.random() * 256000)).toString();
+		this.visibility = data.communityvisibilitystate;
+    }
+
+    async getInventory() {
+        this.inventory = new Inventory();
+        await this.inventory.getInventory(this.steamid);
+        return true;
+	}
+	
+	async getHours() {
+		var gamesPage = await request(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${config.apikey}&steamid=${this.steamid}&format=json&include_played_free_games=1`);
+		if (gamesPage.status != 200) return false;
+		else var games = gamesPage.body;
+
+		for (var gameT in games.response.games) {
+			var game = games.response.games[gameT];
+			if (game.appid == 440) this.hours = Math.round(game.playtime_forever / 60);
+		}
+
+		if (this.hours == undefined) return false;
+		else return true;
+	}
+
+	async getHistory() {
+		var historyPage = await fetch(`https://backpack.tf/profiles/${this.steamid}`);
+		if (historyPage.status != 200) return false;
+		else var history = await historyPage.text();
+		var matches = history.match(/Most Recent[\S\s]*<\/select/);
+		if (matches) {
+			var h = matches[0].match(/value/gi);
+			this.histories = h.length;
+		} else {
+			this.histories = 0;
+		}
+		return true;
+	}
+
+	async getLevel() {
+		var levelPage = await request(`https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${config.apikey}&steamid=${this.steamid}`);
+		if (levelPage.status != 200) return false;
+
+		this.level = levelPage.body.response.player_level;
+		return true;
+	}
+}
+
+class Inventory {
+    constructor() {
+        this.items = [];
+        this.scrap = 0;
+        this.keys = 0;
+		this.success = true;
+		this.inventoryJson = {};
+    }
+    async getInventory(steamid) {
+        var badTryCounter = 0;
+        while (true) {
+			await timeout(100);
+			var response = await request(`https://steamcommunity.com/inventory/${steamid}/440/2?l=english&count=4000`);
+			if (stop === true) {
+				this.success = false;
+				return;
+			}
+			if (response.status != 200 && response.status != 403) {
+				continue;
+			} else if (response.status == 403) {
+				this.success = false;
+				return;
+			}
+			this.inventoryJson = response.body;
+			break;
+		}
+		
+		if (this.inventoryJson.success == undefined || this.inventoryJson.success != 1) {
+			this.success = false;
+			return;
+		}
+
+		var matches = [];
+
+		for (var assetT in this.inventoryJson.assets) {
+			var asset = this.inventoryJson.assets[assetT];
+			for (var descriptionT in this.inventoryJson.descriptions) {
+				var description = this.inventoryJson.descriptions[descriptionT];
+				if (description.classid == asset.classid) {
+					matches.push(description);
+					break;
+				}
+			}
+		}
+
+		for (var it in matches) {
+			var i = matches[it];
+			// ITEM
+			var it = new Item(i);
+			if (it.name == "Scrap Metal") {
+				if (it.tradable) this.scrap++;
+				it.isCurrency = true;
+			}
+			if (it.name == "Reclaimed Metal") {
+				if (it.tradable) this.scrap += 3;
+				it.isCurrency = true;
+			}
+			if (it.name == "Refined Metal") {
+				if (it.tradable) this.scrap += 9;
+				it.isCurrency = true;
+			}
+			if (it.name == "Mann Co. Supply Crate Key") {
+				if (it.tradable) this.keys++;
+				it.isCurrency = true;
+			}
+			this.items.push(it);
+		}
+		return;
+    }
+}
+
+class Item {
+	constructor(data) {
+		this.name;
+		this.nameComplete;
+		this.craftable = 1;
+		this.australium = -1;
+		this.killstreak = 0;
+		this.quality;
+		this.quality2;
+		this.qualityName;
+		this.qualityName2;
+		this.image;
+		this.skinId;
+		this.target;
+		this.targetName;
+		this.tradable = true;
+		this.effect;
+		this.effectName;
+		this.effectImage;
+		this.crate;
+		this.isCrate = false;
+		this.currency;
+		this.priceValue;
+		this.isStrangePart = false;
+		this.isCurrency = false;
+
+		if (data.tradable == 0) this.tradable = false;
+		this.nameComplete = data.market_name;
+		this.name = data.market_name;
+		this.name = this.name.replace(/^The /, "");
+		this.image = `https://steamcommunity-a.akamaihd.net/economy/image/${data.icon_url}`;
+		if (this.name.includes("Killstreak ")) {
+			this.killstreak = 1;
+			this.name = this.name.replace("Killstreak ","");
+
+		}
+		if (this.name.includes("Specialized ")) {
+			this.killstreak = 2;
+			this.name = this.name.replace("Specialized ", "");
+		}
+		if (this.name.includes("Professional ")) {
+			this.killstreak = 2;
+			this.name = this.name.replace("Professional ", "");
+		}
+		if (this.name.includes("Australium ")) {
+			this.australium = 1;
+			this.name = this.name.replace("Australium ", "");
+		}
+
+		for (var tagT in data.tags) {
+			var tag = data.tags[tagT];
+			var category = tag.category;
+			if (category == "Quality") {
+				for (var qualityDataT in qualitieList) {
+					var qualityData = qualitieList[qualityDataT];
+					if (qualityData.name == tag.localized_tag_name) {
+						this.quality = qualityData.index;
+						this.qualityName = qualityData.name;
+						break;
+					}
+				}
+			} else if (category == "Type") {
+				if (tag.localized_tag_name == "Crate") {
+					this.isCrate = true;
+				} else if (tag.localized_tag_name == "Strange Part") {
+					this.isStrangePart = true;
+				}
+			}
+		}
+
+		for (var descriptionT in data.descriptions) {
+			var description = data.descriptions[descriptionT];
+			var value = description.value;
+			if (value.includes("★ Unusual Effect: ") && !value.includes("''")) {
+				this.effectName = value.replace("★ Unusual Effect: ", "");
+			} else if (value.includes("Usable in Crafting")) {
+				this.craftable = -1;
+			}
+		}
+
+		if (!this.isStrangePart) this.name = this.name.replace(`${this.qualityName} `, "");
+
+		for (var qualityDataT in qualitieList) {
+			var qualityData = qualitieList[qualityDataT];
+			if (this.name.startsWith(`${qualityData.name} `)) {
+				if (qualityData.index == 11 && this.isStrangePart) continue;
+				if (this.quality == qualityData.index) break;
+				this.name = this.name.replace(`${qualityData.name} `, "");
+				this.quality2 = qualityData.index;
+				this.qualityName2 = qualityData.name;
+				break;
+			}
+		}
+
+		if (this.quality == 15) {
+			for (var k in skin_list) {
+				var v = skin_list[k];
+				if (this.name.includes(v)) {
+					this.name = this.name.replace(`${v} `, "");
+					this.skinId = k;
+					break;
+				}
+			}
+		}
+
+		if (this.quality == 14) this.qualityName = "Collector";
+
+		if (this.name.includes("#")) {
+			this.crate = this.name.match(/\d+$/);
+			this.name = this.name.replace(` Series #${this.crate}`, "");
+			this.name = this.name.replace(` #${this.crate}`, "");
+		}
+
+		if (this.name.includes(" Unusualifier")) {
+			this.targetName = name.match(/^[\w:\s]+(?=\s)/);
+			this.name = this.name.replace(`${this.targetName} `, "");
+			for (var it in schema) {
+				if (it.item_name == this.targetName) {
+					this.target = it.defindex;
+					break;
+				}
+			}
+		}
+
+		if (this.quality == 5 && this.effectName != undefined) {
+			this.effect = effects[this.effectName] || effects[`The ${this.effectName}`];
+			this.nameComplete = this.nameComplete.replace("Unusual", this.effectName);
+			this.effectImage = `https://backpack.tf/images/440/particles/${this.effect}_94x94.png`;
+		}
+
+		var _name = `${this.australium == 1 ? "Australium " : ""}${this.name}`;
+		var _displayQuality = (this.quality2 || this.quality).toString();
+		if (this.quality == 5) _displayQuality = this.quality.toString();
+		var _craftable = `${this.craftable == 1 ? "Craftable" : "Non-Craftable"}`;
+
+		var p1 = bptf_schema.response.items[_name] || bptf_schema.response.items[`The ${_name}`] || {};
+		var p2 = p1.prices || {};
+		var p3 = p2[_displayQuality] || {};
+		var p4 = p3["Tradable"] || {};
+		var priceIndex = p4[_craftable];
+
+		if (priceIndex == undefined) {
+			this.displayPrice = "No value";
+			this.priceValue = 0;
+			return;
+		}
+
+		var _serial = 0;
+		if (this.quality == 5 || this.quality2 == 5 || _name.includes("Strangifier")) {
+			if (this.target != undefined) _serial = this.target;
+			else if (this.effect != undefined) _serial = this.effect;
+		} else if (this.isCrate) {
+			priceIndex[0] == undefined ? _serial = this.crate : _serial = 0;
+		}
+		var prices = priceIndex[_serial] || priceIndex[_serial];
+		if (prices == undefined) {
+			if (Object.keys(priceIndex).length == 1) prices = priceIndex[Object.keys(priceIndex)[0]];
+			else {
+				this.displayPrice = "No value";
+				this.priceValue = 0;
+				return;
+			} 
+		}
+
+		if (prices.currency == "keys") this.currency = 1;
+		else if (prices.currency == "metal") this.currency = 2;
+		else this.currency = 3;
+
+		if (this.currency == 1) this.priceValue = prices.value;
+		if (this.currency == 2) this.priceValue = prices.value / keyprice;
+		if (this.currency == 3) this.priceValue = 1.33 / keyprice;
+		if (this.currency == undefined) this.priceValue = 0;
+		
+		if (this.currency == 1) this.displayPrice = `${prices.value} Keys`;
+		if (this.currency == 2) this.displayPrice = `${prices.value} Ref`;
+		if (this.currency == 3) this.displayPrice = `1.33 Ref`;
+		if (!this.tradable) {
+			this.displayPrice = "No value";
+			this.priceValue = 0;
+		}
+
+		if (this.skinId != null) currency = 4;
+	}
+}
+
+async function request(url) {
+    try {
+        var response = await fetch(url);
+        if (!response.ok && response.status != 429) {
+            return {status: response.status, body: null};
+        } else if (response.status == 429) {
+			await timeout(5000);
+			return {status: response.status, body: null};
+        } else {
+			var body = await response.json();
+			return {status: response.status, body};
+		}
+    } catch (error) {
+		console.log(`Error fetching`);
+		await timeout(5000);
+        return {status: error.status, body: null};
+    }
+}
+
+async function startScanRe(ids, settings) {
+	t0 = performance.now();
+	document.getElementById("start").classList.add("hidden");
+	document.getElementById("start2").classList.add("hidden");
+	document.getElementById("stop").classList.remove("hidden");
+	document.getElementById("stop2").classList.remove("hidden");
+	stop = false;
+	var id_string = "";
+	var usersToScan = ids.length;
+	var scanned = 0;
+	var status = document.getElementById("status");
+	status.classList.remove("hidden");
+
+	var idParts = [];
+
+	for (var i = 0; i < usersToScan; i += 100) {
+		var end = (i + 100 < usersToScan) ? i + 100 : usersToScan;
+		idParts.push(ids.slice(i, end));
+	}
+
+	for (var idListT in idParts) {
+		var idList = idParts[idListT];
+		if (stop) break;
+		var idString = "";
+
+		for (var i in idList) {
+			var id = idList[i];
+
+			idString += id;
+			if (i != idList.length - 1) idString += ",";
+		}
+
+		var playersData = await request(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${config.apikey}&format=json&steamids=${idString}`);
+		var players = [];
+		for (var p in playersData.body.response.players) {
+			var playerData = playersData.body.response.players[p];
+			players.push(new Player(playerData));
+		}
+
+		for (var playerT in players) {
+			scanned++;
+			status.innerText = `${scanned}/${usersToScan}`;
+			var player = players[playerT];
+			if (stop) break;
+			if (player.visibility == 1 || player.visibility == 2) continue;
+			await player.getInventory();
+			if (!player.inventory.success) continue;
+			if (player.inventory.scrap / 9 > settings.maxRef && settings.maxRef >= 0) continue;
+			if (player.inventory.keys > settings.maxKeys && settings.maxKeys >= 0) continue;
+
+			var displayItems = [];
+
+			for (var itemT in player.inventory.items) {
+				var item = player.inventory.items[itemT];
+
+				if (item.isCurrency) continue;
+
+				if (item.currency != null && settings.totalMinPrice > 0) {
+					if (item.currency == 1 && item.priceValue < settings.totalMinPrice) continue;
+					if (item.currency == 2 && item.priceValue < settings.totalMinPrice) continue;
+					if (item.currency == 3 && item.priceValue < settings.totalMinPrice) continue;
+				}
+
+				if (item.currency == 4 && !settings.skins) continue;
+
+				if (item.currency == undefined && !settings.unvalued) continue;
+
+				if (!item.tradable && !settings.untradable) continue;
+
+				displayItems.push(item);
+			}
+			
+			if (displayItems.length == 0) continue;
+			else addPlayer(player, displayItems, settings);
+		}
+	}
+	endTimer(t0);
+	stopScan();
+}
+/**
+ * 
+ * @param {Player} player
+ * @param {Array<Item>} displayItems 
+ * @param {*} settings
+ */
+async function addPlayer(player, displayItems, settings) {
+	displayItems.sort((a,b) => {return b.priceValue - a.priceValue});
+
+	await player.getHistory();
+	await player.getHours();
+	await player.getLevel();
+
+	if (player.histories == undefined && settings.maxHistory >= 0) return;
+	else if (player.histories != undefined && settings.maxHistory >= 0 && player.histories > settings.maxHistory) return;
+
+	if (player.hours == undefined && settings.maxHours >= 0) return;
+	else if (player.hours != undefined && settings.maxHours >= 0 && player.hours > settings.maxHours) return;
+
+	var itemContainer = document.createElement("div");
+	itemContainer.classList.add("items");
+
+	for (var itemT in displayItems) {
+		var item = displayItems[itemT];
+
+		var itemElement = document.createElement("div");
+		itemElement.classList.add("item");
+		itemElement.classList.add(item.qualityName);
+		itemElement.classList.add(`${item.qualityName2}2`);
+		itemElement.setAttribute("tooltip", item.nameComplete);
+		itemElement.setAttribute("pos", "top");
+
+		var itemImage = document.createElement("img");
+		itemImage.setAttribute("src", item.image);
+		itemImage.setAttribute("height", "65");
+		itemImage.setAttribute("width", "65");
+
+		var effectImage = document.createElement("img");
+		effectImage.setAttribute("src", item.effectImage);
+		effectImage.setAttribute("height", "65");
+		effectImage.setAttribute("width", "65");
+
+		var priceNode = document.createElement("div");
+		priceNode.classList.add("price");
+		priceNode.appendChild(document.createTextNode(item.displayPrice));
+
+		if ((item.quality == 5 || item.quality2 == 5) && item.effectImage != undefined) itemElement.appendChild(effectImage);
+		itemElement.appendChild(itemImage);
+		itemElement.appendChild(priceNode);
+
+		itemContainer.appendChild(itemElement);
+	}
+
+	var user = await userBuilderRe(player, player.playerId);
+	user.appendChild(itemContainer);
+	document.getElementById("userlist").appendChild(user);
+}
+
+/**
+ * 
+ * @param {Player} userObject
+ */
+async function userBuilderRe(userObject, n) {
 	var personIcon = document.createElement("i");
 	personIcon.classList.add("material-icons");
 	personIcon.appendChild(document.createTextNode("person"));
@@ -353,7 +851,7 @@ async function userBuilder(userObject, n) {
 	accountIcon.classList.add("material-icons");
 	accountIcon.appendChild(document.createTextNode("account_circle"));
 	var accountImage = document.createElement("img");
-	accountImage.setAttribute("src", userObject.avatarmedium);
+	accountImage.setAttribute("src", userObject.avatarUrl);
 	var deleteIcon = document.createElement("i");
 	deleteIcon.classList.add("material-icons");
 	deleteIcon.appendChild(document.createTextNode("delete"));
@@ -370,7 +868,7 @@ async function userBuilder(userObject, n) {
 	var profileButton = document.createElement("div");
 	var removeButton = document.createElement("div");
 	avatarCircle.classList.add("profile");
-	avatarCircle.setAttribute("tooltip", userObject.personaname);
+	avatarCircle.setAttribute("tooltip", userObject.name);
 	avatarCircle.setAttribute("pos", "right");
 	avatarCircle.setAttribute("onclick", `openLink('https://steamcommunity.com/profiles/${userObject.steamid}')`)
 	avatarCircle.appendChild(accountImage);
@@ -394,7 +892,7 @@ async function userBuilder(userObject, n) {
 	profileButton.setAttribute("tooltip", "Backpack.tf page");
 	profileButton.setAttribute("onclick", `openLink('https://backpack.tf/profiles/${userObject.steamid}')`);
 	removeButton.setAttribute("tooltip", "Remove listing");
-	removeButton.setAttribute("onclick", `removeUser(${n})`);
+	removeButton.setAttribute("onclick", `removeUser("${n}")`);
 	hoursDisplay.setAttribute("pos", "bottom");
 	levelDisplay.setAttribute("pos", "bottom");
 	historyDisplay.setAttribute("pos", "bottom");
@@ -420,14 +918,14 @@ async function userBuilder(userObject, n) {
 		levelDisplay.appendChild(document.createTextNode("Private"));
 	}
 
-	if (userObject.history_states != undefined) {
-		historyDisplay.appendChild(document.createTextNode(userObject.history_states));
+	if (userObject.histories != undefined) {
+		historyDisplay.appendChild(document.createTextNode(userObject.histories));
 	} else {
 		historyDisplay.appendChild(document.createTextNode("Unknown"));
 	}
 
-	refDisplay.appendChild(document.createTextNode(scrapToRef(userObject.inventoryScrap) + " Ref"));
-	keyDisplay.appendChild(document.createTextNode(userObject.inventoryKeys + " Keys"));
+	refDisplay.appendChild(document.createTextNode(scrapToRef(userObject.inventory.scrap) + " Ref"));
+	keyDisplay.appendChild(document.createTextNode(userObject.inventory.keys + " Keys"));
 
 	addButton.appendChild(addIcon);
 	profileButton.appendChild(accountIcon);
@@ -441,8 +939,8 @@ async function userBuilder(userObject, n) {
 	actions.appendChild(hoursDisplay);
 	actions.appendChild(levelDisplay);
 	actions.appendChild(historyDisplay);
-	if (userObject.inventoryKeys > 0) actions.appendChild(keyDisplay);
-	if (userObject.inventoryScrap > 0) actions.appendChild(refDisplay);
+	if (userObject.inventory.keys > 0) actions.appendChild(keyDisplay);
+	if (userObject.inventory.scrap > 0) actions.appendChild(refDisplay);
 	actions.appendChild(spacer);
 	actions.appendChild(removeButton);
 
@@ -455,549 +953,70 @@ async function userBuilder(userObject, n) {
 	return user;
 }
 
-async function stopScan() {
-	stop = true;
-	document.getElementById("stop").classList.add("hidden");
-	document.getElementById("stop2").classList.add("hidden");
-	document.getElementById("start").classList.remove("hidden");
-	document.getElementById("start2").classList.remove("hidden");
-}
-
-async function endTimer(t0) {
-	var t1 = performance.now();
-	var t = (t1 - t0) / 1000;
-	var t = t.toFixed(3);
-	document.getElementById("status").innerText = `The scan took ${t} seconds`;
-}
-
-async function startScan(ids, settings) {
-	t0 = performance.now();
-	document.getElementById("start").classList.add("hidden");
-	document.getElementById("start2").classList.add("hidden");
-	document.getElementById("stop").classList.remove("hidden");
-	document.getElementById("stop2").classList.remove("hidden");
-	stop = false;
-	var id_string = "";
-	var usersToScan = ids.length;
-	var scanned = 0;
-	var status = document.getElementById("status");
-	status.classList.remove("hidden");
-
-	nextScan(0);
-	async function nextScan(i) {
-		if (i >= ids.length) {
-			stopScan();
-			endTimer(t0);
-			return false;
-		}
-		var scan = false;
-		var id = ids[i];
-		id_string += `${id},`
-		if (usersToScan < 100) {
-			if ((i + 1) % 100 == usersToScan) {
-				scan = "yes";
-			}
-		} else if ((i + 1) % 100 == 0) {
-			scan = "yes";
-		}
-		if (stop === true) {
-			endTimer(t0);
-			return false;
-		}
-		if (scan == "yes" && stop === false) {
-			var profile_page = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${config.apikey}&format=json&steamids=${id_string}`);
-			var profile = await profile_page.json();
-			id_string = "";
-			if (usersToScan < 100) {
-				usersToScan == 0;
-			} else {
-				usersToScan -= 100;
-			}
-			for (var j in profile.response.players) {
-				scanned++;
-				status.innerText = `${scanned}/${ids.length}`;
-				if (stop === true) {
-					endTimer(t0);
-					return false;
-				}
-				var userObject = profile.response.players[j];
-				if (userObject.communityvisibilitystate != 3) {
-					continue;
-				}
-				var inventory = await getUserInventory(userObject.steamid, settings);
-				if (inventory == "private") {
-					continue;
-				} else if (inventory == "timeout") {
-					var inventory = await getUserInventory(userObject.steamid);
-				}
-				var n = Math.floor((Math.random() * (Math.pow(10, 32) - 1)) + 1);
-				userObject.inventoryScrap = 0;
-				userObject.inventoryKeys = 0;
-				items = 0;
-				var itemContainer = document.createElement("div");
-				itemContainer.classList.add("items");
-				var skinContainer = document.createElement("div");
-				skinContainer.classList.add("items");
-				if (inventory === "timeout") continue;
-				for (var z in inventory) {
-					// Get the item stats
-					var item = inventory[z];
-
-					// Check if the item is a currency
-					if (item.name == "Refined Metal") {
-						userObject.inventoryScrap += 9;
-						continue;
-					} else if (item.name == "Reclaimed Metal") {
-						userObject.inventoryScrap += 3;
-						continue;
-					} else if (item.name == "Scrap Metal") {
-						userObject.inventoryScrap++;
-						continue;
-					} else if (item.name == "Mann Co. Supply Crate Key") {
-						userObject.inventoryKeys++;
-						continue;
-					}
-
-					// Get the item price
-					if (item.skin_id != undefined) {
-						var price = {
-							currency: "skin",
-							value: 0
-						}
-					} else if (bptf_schema.response.items[item.australium == 1 ? "Australium " + item.name : item.name] == undefined) {
-						var price = {
-							currency: "unknown",
-							value: 0
-						}
-					} else if (bptf_schema.response.items[item.australium == 1 ? "Australium " + item.name : item.name].prices[item.quality2 != undefined ? item.quality2 : item.quality] == undefined) {
-						var price = {
-							currency: "unknown",
-							value: 0
-						}
-					} else if (bptf_schema.response.items[item.australium == 1 ? "Australium " + item.name : item.name].prices[item.quality2 != undefined ? item.quality2 : item.quality].Tradable[item.craftable == 1 ? "Craftable" : "Non-Craftable"] == undefined) {
-						var price = {
-							currency: "unknown",
-							value: 0
-						}
-					} else {
-						var serial = undefined;
-						if (item.quality == 5 || item.quality2 == 5) {
-							if (item.target != undefined) {
-								serial = item.target;
-							} else if (item.effect != undefined) {
-								serial = item.effect;
-							} else {
-								serial = 0;
-							}
-						} else {
-							if (item.crate != undefined) {
-								if (bptf_schema.response.items[item.australium == 1 ? "Australium " + item.name : item.name].prices[item.quality2 != undefined ? item.quality2 : item.quality].Tradable[item.craftable == 1 ? "Craftable" : "Non-Craftable"][0] == undefined) {
-									serial = item.crate;
-								} else {
-									serial = 0;
-								}
-							} else {
-								serial = 0;
-							}
-						}
-						var price = bptf_schema.response.items[item.australium == 1 ? "Australium " + item.name : item.name].prices[item.quality2 != undefined ? item.quality2 : item.quality].Tradable[item.craftable == 1 ? "Craftable" : "Non-Craftable"][serial];
-						if (price == undefined) {
-							continue;
-						}
-					}
-
-					// Filter the price
-					if (price.currency == "keys") {
-						if (price.value < settings.minKeys + settings.minRef / keyprice) continue;
-					} else if (price.currency == "metal") {
-						if (settings.minKeys > 0 && price.value < settings.minKeys * keyprice + settings.minRef) {
-							continue;
-						} else if (price.value < settings.minRef) {
-							continue;
-						}
-					} else if (price.currency == "unknown") {
-						if (settings.unvalued === false) continue;
-					} else if (price.currency == "skin") {
-						if (settings.skins === false) continue;
-					} else {
-						// Hat
-						if (0 < settings.minKeys) continue;
-						if (1.33 < settings.minRef) continue;
-					}
-
-					// Get the order value that the item will have
-					var orderPrice = 0;
-					if (price.currency == "keys") {
-						orderPrice = price.value * 100 * 100;
-					} else if (price.currency == "metal") {
-						orderPrice = price.value * 100;
-					} else if (price.currency == "unknown") {
-						orderPrice = 0;
-					} else if (price.currency == "skin") {
-						orderPrice = item.quality2 % 6;
-					} else {
-						orderPrice = 133;
-					}
-
-					// Increase the item counter
-					items++;
-
-					// Set the currency name
-					if (price.currency == "metal") {
-						currency_name = "Ref";
-					} else if (price.currency == "keys") {
-						currency_name = "Keys";
-					} else if (price.currency == "unknown") {
-						currency_name = "Unknown";
-					} else {
-						currency_name = "Hat";
-					}
-
-					// Crate the item element
-					var itemElement = document.createElement("div");
-					itemElement.classList.add("item");
-					itemElement.classList.add(item.quality_name);
-					if (item.quality2 != undefined && item.quality2 != 6) {
-						itemElement.classList.add(`${item.quality2_name}2`);
-					}
-					itemElement.setAttribute("tooltip", item.name_original);
-					itemElement.setAttribute("pos", "top");
-					if (item.available != undefined) {
-						var ts = getTime();
-						itemElement.setAttribute("tooltipS", `Tradable in ${Math.floor((item.available - ts) / (24 * 60 * 60))} days`);
-						itemElement.setAttribute("posS", "bottom");
-					}
-
-					var categoryIcon = document.createElement("i");
-					categoryIcon.classList.add("material-icons");
-					categoryIcon.appendChild(document.createTextNode("category"));
-
-					var itemImage = document.createElement("img");
-					itemImage.setAttribute("src", item.image);
-					itemImage.setAttribute("height", "65");
-					itemImage.setAttribute("width", "65");
-
-					var timeIcon = document.createElement("i");
-					timeIcon.classList.add("material-icons");
-					timeIcon.appendChild(document.createTextNode("access_time"));
-
-					var untradableMark = document.createElement("div");
-					untradableMark.classList.add("tradable");
-					untradableMark.appendChild(timeIcon);
-
-					var effectImage = document.createElement("img");
-					effectImage.setAttribute("src", item.effect_image);
-					effectImage.setAttribute("height", "65");
-					effectImage.setAttribute("width", "65");
-
-					var priceNode = document.createElement("div");
-					priceNode.classList.add("price");
-					if (price.currency == "unknown") {
-						priceNode.appendChild(document.createTextNode(`Unknown`));
-					} else {
-						priceNode.appendChild(document.createTextNode(`${price.value} ${currency_name}`));
-					}
-
-					if (item.quality == 5 || item.quality2 == 5) itemElement.appendChild(effectImage);
-					itemElement.appendChild(itemImage);
-					if (item.available != undefined) itemElement.appendChild(untradableMark);
-					if (price.currency != "skin") itemElement.appendChild(priceNode);
-					itemElement.setAttribute("style", `order: -${Math.floor(orderPrice)}`);
-					if (price.currency == "skin") {
-						skinContainer.appendChild(itemElement);
-					} else {
-						itemContainer.appendChild(itemElement);
-					}
-				}
-				if (items > 0) {
-					async function sendData(userObject, itemContainer, skinContainer, settings) {
-						// Backpack history states
-						var bptf_history_page = await fetch(`https://backpack.tf/profiles/${userObject.steamid}`);
-						// Check if status is 200
-						if (bptf_history_page.ok) {
-							var bptf_history = await bptf_history_page.text();
-							// If there are no matches then history_element will be null, that means there are no history states
-							var history_element = bptf_history.match(/Most Recent[\S\s]*<\/select/i);
-							if (history_element) {
-								var history_elements = history_element[0].match(/value/gi);
-								userObject.history_states = history_elements.length;
-							} else {
-								userObject.history_states = 0;
-							}
-						}
-
-						if (settings.maxHistory >= 0) {
-							if (userObject.history_states == undefined) return false;
-							if (userObject.history_states > settings.maxHistory) return false;
-						}
-
-						// Game time
-						var games_page = await fetch(`http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${config.apikey}&steamid=${userObject.steamid}&format=json&include_played_free_games=1`);
-						var games = await games_page.json();
-
-						var game_list = games.response.games;
-						if (game_list != undefined) {
-							for (var game of game_list) {
-								if (game.appid == 440) {
-									userObject.hours = Math.round(game.playtime_forever / 60);
-								}
-							}
-						}
-
-						if (settings.maxHours >= 0 && game_list == undefined) return false;
-						if (settings.maxHours >= 0 && userObject.hours > settings.maxHours) return false;
-
-						// User level
-						var level_page = await fetch(`https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${config.apikey}&steamid=${userObject.steamid}`);
-						var level = await level_page.json();
-
-						level = level.response.player_level;
-						userObject.level = level;
-
-						var user = await userBuilder(userObject, n);
-						if (skinContainer.children.length > 0) user.appendChild(skinContainer);
-						if (skinContainer.children.length > 0 && itemContainer.children.length > 0) {
-							var divider = document.createElement("div");
-							divider.classList.add("divider");
-							user.appendChild(divider);
-						}
-						if (itemContainer.children.length > 0) user.appendChild(itemContainer);
-						document.getElementById("userlist").appendChild(user);
-					}
-					if (settings.maxKeys != -1 && settings.maxRef != -1) {
-						if (settings.maxKeys > userObject.inventoryKeys) {
-							sendData(userObject, itemContainer, skinContainer, settings);
-						} else if (settings.maxKeys == userObject.inventoryKeys && settings.maxRef >= scrapToRef(userObject.inventoryScrap)) {
-							sendData(userObject, itemContainer, skinContainer, settings);
-						}
-					} else if (settings.maxKeys != -1) {
-						if (settings.maxKeys >= userObject.inventoryKeys) {
-							sendData(userObject, itemContainer, skinContainer, settings);
-						}
-					} else if (settings.maxRef != -1) {
-						if (settings.maxRef >= scrapToRef(userObject.inventoryScrap)) {
-							sendData(userObject, itemContainer, skinContainer, settings);
-						}
-					} else {
-						sendData(userObject, itemContainer, skinContainer, settings);
-					}
-				}
-			}
-			nextScan(++i);
-		} else {
-			nextScan(++i);
-		}
-	}
-}
-
 function scrapToRef(scrapNumber) {
 	refNumber = Math.trunc((scrapNumber / 9) * 100) / 100;
 	return refNumber;
 }
 
-async function getUserInventory(steamid, settings) {
-	var inventory_page = await fetch(`http://api.steampowered.com/ieconitems_440/getplayeritems/v0001/?key=${config.apikey}&steamid=${steamid}`);
-	var inventory = await inventory_page.json();
-	if (inventory.result == undefined) {
-		return "private";
+var qualitieList = [
+	{
+	  "name": "Normal",
+	  "color": "#B2B2B2",
+	  "index": 0
+	},
+	{
+	  "name": "Genuine",
+	  "color": "#4D7455",
+	  "index": 1
+	},
+	{
+	  "name": "Vintage",
+	  "color": "#476291",
+	  "index": 3
+	},
+	{
+	  "name": "Unusual",
+	  "color": "#8650AC",
+	  "index": 5
+	},
+	{
+	  "name": "Unique",
+	  "color": "#FFD700",
+	  "index": 6
+	},
+	{
+	  "name": "Community",
+	  "color": "#70B04A",
+	  "index": 7
+	},
+	{
+	  "name": "Valve",
+	  "color": "#A50F79",
+	  "index": 8
+	},
+	{
+	  "name": "Self-Made",
+	  "color": "#70B04A",
+	  "index": 9
+	},
+	{
+	  "name": "Strange",
+	  "color": "#CF6A32",
+	  "index": 11
+	},
+	{
+	  "name": "Haunted",
+	  "color": "#38F3AB",
+	  "index": 13
+	},
+	{
+	  "name": "Collector's",
+	  "color": "#AA0000",
+	  "index": 14
+	},
+	{
+	  "name": "Decorated Weapon",
+	  "color": "#FAFAFA",
+	  "index": 15
 	}
-	if (inventory.result.num_backpack_slots < 300) {
-		return "private"
-	}
-	if (inventory.result.status != 1) {
-		return "timeout";
-	}
-	var response = [];
-	for (var i in inventory.result.items) {
-		killstreak = undefined;
-		australium = undefined;
-		craftable = undefined;
-		name = undefined;
-		name_original = undefined;
-		tradable = true;
-		available = undefined;
-		skin_id = undefined;
-		skin_wear = undefined;
-		quality = undefined;
-		quality_name = undefined;
-		quality2 = undefined;
-		quality2_name = undefined;
-		target = undefined;
-		target_name = undefined;
-		var item = inventory.result.items[i];
-		if (item.flag_cannot_trade != undefined) {
-			tradable = false;
-		}
-		if (item.flag_cannot_craft != undefined) {
-			craftable = -1;
-		} else {
-			craftable = 1;
-		}
-		var quality = item.quality;
-		for (var j in item.attributes) {
-			var attribute = item.attributes[j].defindex;
-			var attrib = item.attributes[j];
-			if (attribute == 2027) {
-				var australium = 1
-			} else if (attribute == 2025) {
-				var killstreak = attrib.float_value;
-			} else if (attribute == 134) {
-				var effect_image = `https://backpack.tf/images/440/particles/${item.attributes[j].float_value}_94x94.png`;
-				var effect = attrib.float_value;
-				quality2 = 5;
-			} else if (attribute == 2041) {
-				var effect_image = `https://backpack.tf/images/440/particles/${item.attributes[j].value}_94x94.png`;
-				var effect = attrib.value;
-			} else if (attribute == 187) {
-				var crate = attrib.float_value;
-			} else if (attribute == 211) {
-				var ts = getTime();
-				if (ts < attrib.value && settings.untradable === true) {
-					tradable = true;
-					available = attrib.value;
-				}
-			} else if (attribute == 834) {
-				skin_id = attrib.value;
-				// quality = 15;
-			} else if (attribute == 725) {
-				skin_wear = Math.floor(attrib.float_value * 5);
-				if (skin_wear < 1) skin_wear = 1;
-			} else if (attribute == 214) {
-				quality2 = 11;
-			} else if (attribute == 2012) {
-				target = attrib.float_value;
-			}
-		}
-		if (quality == quality2) {
-			quality2 = undefined;
-		} else if (quality == 15 && quality2 == undefined) {
-			quality2 = 6;
-		}
-		if (tradable === false) {
-			continue;
-		}
-		if (australium == undefined) {
-			var australium = -1;
-		}
-		if (killstreak == undefined) {
-			var killstreak = 0;
-		}
-		for (var l in schema) {
-			var schem = schema[l];
-			if (schem.defindex == item.defindex) {
-				var name = schem.item_name;
-				var image = schem.image_url;
-				break;
-			}
-		}
-		var name_original;
-		if (target != undefined) {
-			for (var l in schema) {
-				var schem = schema[l];
-				if (schem.defindex == target) {
-					target_name = schem.item_name;
-					break;
-				}
-			}
-			name_original = target_name + " Unusualifier";
-		} else {
-			name_original = name;
-		}
-		if (skin_id != undefined) {
-			name_original = `${skin_list[skin_id]} ${name_original}`;
-			image = `https://scrap.tf/img/items/warpaint/${name}_${skin_id}_${skin_wear}_0.png`;
-		}
-		if (quality == 15) {
-			quality2_name = qualities[quality2].name;
-		}
-		if (australium == 1) {
-			name_original = `Australium ${name_original}`;
-		}
-		if (killstreak !== 0) {
-			name_original = `Killstreak ${name_original}`;
-			if (killstreak == 3) {
-				name_original = `Professional ${name_original}`;
-			} else if (killstreak == 2) {
-				name_original = `Specialized ${name_original}`;
-			}
-		}
-		var quality_name = qualities[quality].name;
-		if (quality != 6 && quality != 15) {
-			name_original = `${quality_name} ${name_original}`;
-		}
-		if (quality2 != 6 && quality2 != undefined) {
-			name_original = `${quality2_name} ${name_original}`;
-		}
-		response.push({
-			name,
-			name_original,
-			quality,
-			quality_name,
-			craftable,
-			killstreak,
-			australium,
-			image,
-			effect,
-			effect_image,
-			crate,
-			tradable,
-			available,
-			skin_id,
-			skin_wear,
-			quality2,
-			quality2_name,
-			target
-		});
-	}
-	return response;
-}
-
-var qualities = [];
-qualities[0] = {
-	name: "Normal",
-	color: "#B2B2B2"
-};
-qualities[1] = {
-	name: "Genuine",
-	color: "#4D7455"
-};
-qualities[3] = {
-	name: "Vintage",
-	color: "#476291"
-};
-qualities[5] = {
-	name: "Unusual",
-	color: "#8650AC"
-};
-qualities[6] = {
-	name: "Unique",
-	color: "#FFD700"
-};
-qualities[7] = {
-	name: "Community",
-	color: "#70B04A"
-};
-qualities[8] = {
-	name: "Valve",
-	color: "#A50F79"
-};
-qualities[9] = {
-	name: "Self-Made",
-	color: "#70B04A"
-};
-qualities[11] = {
-	name: "Strange",
-	color: "#CF6A32"
-};
-qualities[13] = {
-	name: "Haunted",
-	color: "#38F3AB"
-};
-qualities[14] = {
-	name: "Collector",
-	color: "#AA0000"
-};
-qualities[15] = {
-	name: "Decorated",
-	color: "#FAFAFA"
-};
+  ];
