@@ -145,6 +145,7 @@ async function schemaRefresh() {
 	progress.innerText = "Fetching the effects";
 	var effectsObjs_page = await fetch(`https://raw.githubusercontent.com/mninc/tf2-effects/master/effects.json`);
 	var effectsObjs = await effectsObjs_page.json();
+	effects = effectsObjs;
 	await fs.writeFileSync("./effects.json", JSON.stringify(effectsObjs));
 
 	// Finishing up
