@@ -19,7 +19,7 @@ var schema;
 var bptf_schema;
 var skin_list;
 var effects;
-var local_version = "1.4.0";
+var local_version = "1.4.1";
 var last_input;
 
 /**
