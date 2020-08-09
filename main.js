@@ -19,7 +19,7 @@ var schema;
 var bptf_schema;
 var skin_list;
 var effects;
-var local_version = "1.4.0";
+var local_version = "1.4.1";
 var last_input;
 
 /**
@@ -342,7 +342,7 @@ async function scan() {
 	closeWindow('scaninfo');
 	var ids = [];
 	var ids1 = input.match(/7656119[0-9]{10}/g);
-	var ids2 = input.match(/\[U:1:[0-9]{9}\]/g);
+	var ids2 = input.match(/\[U:1:[0-9]*\]/g);
 	for (var id in ids2) {
 		var newSteamID = new SteamID(ids2[id]);
 		var newID = newSteamID.getSteamID64();
@@ -602,6 +602,7 @@ class Item {
 		}
 
 		if (this.quality == 14) this.qualityName = "Collector";
+		if (this.quality == 15) this.qualityName = "Decorated";
 
 		if (this.name.includes("#")) {
 			this.crate = this.name.match(/\d+$/);
