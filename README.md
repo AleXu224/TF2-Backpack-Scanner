@@ -1,3 +1,4 @@
+# [This project is no longer maintained, please use the new version instead](https://github.com/AleXu224/tf2-scanner)
 # TF2-Backpack-Scanner
 An easy to use TF2 backpack/item scanner.
 Supports group scanning, server statuses and steam ids and comes with a variety of filters to help with your trading.
